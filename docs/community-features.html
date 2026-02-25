@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agents in a Box | Community Features</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg-primary: #0a0a0f;
+  --bg-card: rgba(16, 20, 30, 0.65);
+  --bg-card-hover: rgba(20, 28, 42, 0.8);
+  --border-card: rgba(239, 68, 68, 0.12);
+  --border-card-hover: rgba(239, 68, 68, 0.3);
+  --text-primary: #e8ecf4;
+  --text-secondary: #8b95a8;
+  --text-muted: #5a6478;
+  --accent-red: #ef4444;
+  --accent-orange: #f97316;
+  --accent-amber: #f59e0b;
+  --gradient-main: linear-gradient(135deg, #ef4444, #f97316, #f59e0b);
+  --gradient-glow: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(245, 158, 11, 0.08));
+  --gradient-text: linear-gradient(135deg, #ef4444 0%, #f97316 50%, #f59e0b 100%);
+  --shadow-glow: 0 0 40px rgba(239, 68, 68, 0.08);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.3), 0 0 1px rgba(239, 68, 68, 0.1);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+.bg-grid {
+  position: fixed; inset: 0;
+  background-image: linear-gradient(rgba(239, 68, 68, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(239, 68, 68, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none; z-index: 0;
+}
+
+.bg-radial-top {
+  position: fixed; top: -30%; left: 50%; transform: translateX(-50%);
+  width: 120%; height: 80%;
+  background: radial-gradient(ellipse at center, rgba(239, 68, 68, 0.06) 0%, transparent 65%);
+  pointer-events: none; z-index: 0;
+}
+
+.container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+/* Hero */
+.hero { text-align: center; padding: 80px 0 40px; }
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2);
+  padding: 6px 16px; border-radius: 100px; font-size: 13px; color: var(--accent-red);
+  margin-bottom: 24px; font-weight: 500;
+}
+.hero h1 {
+  font-size: clamp(2.2rem, 5vw, 3.2rem); font-weight: 700; line-height: 1.15;
+  margin-bottom: 20px;
+}
+.hero h1 .gradient { background: var(--gradient-text); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.hero p { font-size: 1.1rem; color: var(--text-secondary); max-width: 650px; margin: 0 auto; }
+
+/* Section */
+.section { padding: 50px 0; }
+.section-title { font-size: 1.5rem; font-weight: 600; margin-bottom: 12px; text-align: center; }
+.section-subtitle { font-size: 1rem; color: var(--text-secondary); text-align: center; max-width: 600px; margin: 0 auto 36px; }
+
+/* Module Cards */
+.modules-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.module-card {
+  background: var(--bg-card); border: 1px solid var(--border-card);
+  border-radius: var(--radius); padding: 0; overflow: hidden;
+  transition: var(--transition);
+}
+.module-card:hover {
+  background: var(--bg-card-hover); border-color: var(--border-card-hover);
+  box-shadow: var(--shadow-glow); transform: translateY(-2px);
+}
+.module-header {
+  background: var(--gradient-glow); padding: 24px 28px 20px;
+  border-bottom: 1px solid var(--border-card);
+}
+.module-icon { font-size: 2rem; margin-bottom: 10px; }
+.module-name { font-size: 1.15rem; font-weight: 600; margin-bottom: 4px; }
+.module-agent { font-size: 0.8rem; color: var(--accent-orange); font-weight: 500; }
+.module-body { padding: 20px 28px 24px; }
+.module-desc { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 14px; }
+.module-features { list-style: none; }
+.module-features li {
+  font-size: 0.85rem; color: var(--text-secondary); padding: 4px 0;
+  display: flex; align-items: center; gap: 8px;
+}
+.module-features li::before { content: "&#10003;"; color: var(--accent-red); font-weight: 600; }
+.module-tag {
+  display: inline-block; font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.5px; padding: 3px 8px; border-radius: 4px; margin-top: 12px;
+}
+.tag-included { background: rgba(52, 211, 153, 0.1); color: #34d399; }
+.tag-addon { background: rgba(245, 158, 11, 0.1); color: var(--accent-amber); }
+
+/* Timeline */
+.timeline { max-width: 700px; margin: 0 auto; }
+.timeline-item {
+  display: flex; gap: 20px; padding: 20px 0;
+  border-left: 2px solid rgba(239, 68, 68, 0.15); margin-left: 12px; padding-left: 28px;
+  position: relative;
+}
+.timeline-item::before {
+  content: ''; position: absolute; left: -7px; top: 26px;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--accent-red); border: 2px solid var(--bg-primary);
+}
+.timeline-content h3 { font-size: 1rem; font-weight: 600; margin-bottom: 4px; }
+.timeline-content p { font-size: 0.9rem; color: var(--text-secondary); }
+.timeline-week { font-size: 0.75rem; color: var(--accent-orange); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* What You Get */
+.benefits-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.benefit {
+  background: var(--bg-card); border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm); padding: 24px;
+  transition: var(--transition);
+}
+.benefit:hover { border-color: var(--border-card-hover); }
+.benefit-icon { font-size: 1.5rem; margin-bottom: 10px; }
+.benefit h3 { font-size: 1rem; font-weight: 600; margin-bottom: 6px; }
+.benefit p { font-size: 0.85rem; color: var(--text-secondary); }
+
+/* CTA */
+.cta-section { text-align: center; padding: 80px 0 60px; }
+.cta-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--gradient-main); color: #fff; font-weight: 600;
+  padding: 14px 32px; border-radius: 10px; text-decoration: none;
+  font-size: 1rem; transition: var(--transition);
+}
+.cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(239, 68, 68, 0.3); }
+
+.footer {
+  text-align: center; padding: 40px 0; border-top: 1px solid rgba(239, 68, 68, 0.08);
+  color: var(--text-muted); font-size: 0.85rem;
+}
+
+@media (max-width: 768px) {
+  .modules-grid { grid-template-columns: 1fr; }
+  .benefits-grid { grid-template-columns: 1fr; }
+  .hero { padding: 60px 0 40px; }
+}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-radial-top"></div>
+
+<div class="container">
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-badge">Agents in a Box Community</div>
+    <h1>Build Your <span class="gradient">AI Agent Army</span></h1>
+    <p>Fork-ready agent systems, weekly hackathons, and a community of builders shipping AI agents that actually work. Everything you need to go from zero to autonomous.</p>
+  </section>
+
+  <!-- What's Included -->
+  <section class="section">
+    <h2 class="section-title">What You Get</h2>
+    <p class="section-subtitle">The tools, the code, and the community to build real AI agents.</p>
+
+    <div class="benefits-grid">
+
+      <div class="benefit">
+        <div class="benefit-icon">&#128187;</div>
+        <h3>ClawBuddy Command Center</h3>
+        <p>Fork-ready AI dashboard with 20 feature areas, 18 edge functions, and 51 database migrations. Deploy to your own Supabase in 20 minutes.</p>
+      </div>
+
+      <div class="benefit">
+        <div class="benefit-icon">&#128218;</div>
+        <h3>Agent Starter Templates</h3>
+        <p>Pre-built CLAUDE.md for Claude Code, OpenClaw configs, Python helpers, and Node.js examples. Connect any agent in minutes.</p>
+      </div>
+
+      <div class="benefit">
+        <div class="benefit-icon">&#128736;</div>
+        <h3>Weekly Hackathons</h3>
+        <p>Live build sessions every week. We pick a project, build it together, ship it by end of session. Real agents, real deployments.</p>
+      </div>
+
+      <div class="benefit">
+        <div class="benefit-icon">&#128230;</div>
+        <h3>Module Library</h3>
+        <p>Fork-ready agent modules: Meeting Intelligence, Creator Command, Cognitive Memory, and more. Each module comes with setup guide, showcase, and companion docs.</p>
+      </div>
+
+      <div class="benefit">
+        <div class="benefit-icon">&#127793;</div>
+        <h3>$1,700 in Free Credits</h3>
+        <p>DeepGram voice credits, OpenAI API credits, and hosting credits to get your agents running without paying out of pocket.</p>
+      </div>
+
+      <div class="benefit">
+        <div class="benefit-icon">&#128101;</div>
+        <h3>Builder Community</h3>
+        <p>A Skool community of people actually building AI agents. Share what you build, get feedback, find collaborators, celebrate wins.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Agent Modules -->
+  <section class="section">
+    <h2 class="section-title">Agent Modules</h2>
+    <p class="section-subtitle">Each module is a complete agent system you can fork and deploy.</p>
+
+    <div class="modules-grid">
+
+      <div class="module-card">
+        <div class="module-header">
+          <div class="module-icon">&#127919;</div>
+          <div class="module-name">ClawBuddy System</div>
+          <div class="module-agent">Mission Control for AI Agents</div>
+        </div>
+        <div class="module-body">
+          <p class="module-desc">The core command center. Kanban board, AI logs, insights, reports, automations, OpsCenter, and self-improving brain.</p>
+          <ul class="module-features">
+            <li>20 feature areas via REST API</li>
+            <li>Automated workflows with pg_cron</li>
+            <li>Self-improving Sherlock Brain</li>
+            <li>Animated 2D agent office</li>
+          </ul>
+          <span class="module-tag tag-included">Included</span>
+        </div>
+      </div>
+
+      <div class="module-card">
+        <div class="module-header">
+          <div class="module-icon">&#127908;</div>
+          <div class="module-name">Meeting Intelligence</div>
+          <div class="module-agent">PepperPots -- Meeting Assistant</div>
+        </div>
+        <div class="module-body">
+          <p class="module-desc">Ingest Fathom AI recordings, auto-classify meetings, extract action items, generate proposals, and create lead magnets.</p>
+          <ul class="module-features">
+            <li>Fathom AI integration (1,600+ meetings)</li>
+            <li>Action Item Helper with email follow-ups</li>
+            <li>Proposal Generator from transcripts</li>
+            <li>Lead Magnet Creator</li>
+          </ul>
+          <span class="module-tag tag-addon">Module</span>
+        </div>
+      </div>
+
+      <div class="module-card">
+        <div class="module-header">
+          <div class="module-icon">&#127909;</div>
+          <div class="module-name">Creator Command</div>
+          <div class="module-agent">AI-Powered Content Engine</div>
+        </div>
+        <div class="module-body">
+          <p class="module-desc">YouTube analytics, competitor tracking, content ideation, and viral detection. Your AI content strategist.</p>
+          <ul class="module-features">
+            <li>YouTube channel analytics dashboard</li>
+            <li>Competitor intelligence tracking</li>
+            <li>Banger Lab for content ideas</li>
+            <li>Viral alert detection</li>
+          </ul>
+          <span class="module-tag tag-addon">Module</span>
+        </div>
+      </div>
+
+      <div class="module-card">
+        <div class="module-header">
+          <div class="module-icon">&#129504;</div>
+          <div class="module-name">Cognitive Memory</div>
+          <div class="module-agent">Persistent AI Knowledge Base</div>
+        </div>
+        <div class="module-body">
+          <p class="module-desc">Agents learn and remember across sessions. Submit knowledge, approve entries, build a growing intelligence base.</p>
+          <ul class="module-features">
+            <li>Persistent memory across sessions</li>
+            <li>Approval workflow for knowledge</li>
+            <li>Structured knowledge categories</li>
+            <li>Cross-agent memory sharing</li>
+          </ul>
+          <span class="module-tag tag-addon">Module</span>
+        </div>
+      </div>
+
+      <div class="module-card">
+        <div class="module-header">
+          <div class="module-icon">&#128222;</div>
+          <div class="module-name">AI Phone Employee</div>
+          <div class="module-agent">Lexa -- Voice Agent</div>
+        </div>
+        <div class="module-body">
+          <p class="module-desc">Give your AI agent a phone number. Lexa handles inbound/outbound calls with DeepGram voice, real-time transcription, and CRM integration.</p>
+          <ul class="module-features">
+            <li>DeepGram voice integration</li>
+            <li>Real-time call transcription</li>
+            <li>Inbound &amp; outbound calls</li>
+            <li>Call summary reports</li>
+          </ul>
+          <span class="module-tag tag-addon">Module</span>
+        </div>
+      </div>
+
+      <div class="module-card">
+        <div class="module-header">
+          <div class="module-icon">&#128231;</div>
+          <div class="module-name">AI Email Employee</div>
+          <div class="module-agent">Watson -- Email Agent</div>
+        </div>
+        <div class="module-body">
+          <p class="module-desc">Watson manages your inbox. Reads, triages, drafts responses, sends follow-ups, and reports on email activity. Your email autopilot.</p>
+          <ul class="module-features">
+            <li>AgentMail inbox integration</li>
+            <li>Smart email triage and routing</li>
+            <li>Auto-draft responses</li>
+            <li>Follow-up scheduling</li>
+          </ul>
+          <span class="module-tag tag-addon">Module</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Hackathon Schedule -->
+  <section class="section">
+    <h2 class="section-title">Build Path</h2>
+    <p class="section-subtitle">From zero to autonomous in 4 weeks.</p>
+
+    <div class="timeline">
+
+      <div class="timeline-item">
+        <div class="timeline-content">
+          <div class="timeline-week">Week 1</div>
+          <h3>Deploy ClawBuddy</h3>
+          <p>Fork the repo, set up Supabase, deploy edge functions, connect your first agent. By end of week, your agent has a live dashboard.</p>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-content">
+          <div class="timeline-week">Week 2</div>
+          <h3>Add Your First Module</h3>
+          <p>Pick a module (Meeting Intelligence, Creator Command, or Cognitive Memory). Follow the setup guide. See real data on your dashboard.</p>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-content">
+          <div class="timeline-week">Week 3</div>
+          <h3>Automate Everything</h3>
+          <p>Set up scheduled automations. Morning digests, evening reports, competitor intel. Your agent runs on autopilot while you sleep.</p>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-content">
+          <div class="timeline-week">Week 4</div>
+          <h3>Go Autonomous</h3>
+          <p>Deploy Sherlock Brain. Your agent analyzes its own performance, auto-tunes settings, and discovers work proactively. Self-improving AI.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Supercharge -->
+  <section class="section">
+    <h2 class="section-title">Plus: Supercharge Claude Code</h2>
+    <p class="section-subtitle">Dedicated course for getting the most out of Claude Code as your build agent.</p>
+
+    <div class="benefits-grid">
+      <div class="benefit">
+        <div class="benefit-icon">&#128640;</div>
+        <h3>CLAUDE.md Mastery</h3>
+        <p>Write agent instructions that actually work. Structure, patterns, and real examples from production agents.</p>
+      </div>
+      <div class="benefit">
+        <div class="benefit-icon">&#128274;</div>
+        <h3>Session Management</h3>
+        <p>Prevent context overflow, manage long sessions, and maintain state across compactions. The techniques that matter.</p>
+      </div>
+      <div class="benefit">
+        <div class="benefit-icon">&#9881;</div>
+        <h3>Multi-Tool Integration</h3>
+        <p>Connect Claude Code to Supabase, Make.com, AgentMail, and more. Build agents that interact with the real world.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <h2 class="section-title">Join the Build</h2>
+    <p class="section-subtitle" style="margin-bottom: 32px;">Weekly hackathons. Fork-ready code. A community that ships.</p>
+    <a href="#" class="cta-btn">Join Agents in a Box &#8594;</a>
+  </section>
+
+  <footer class="footer">
+    <p>Agents in a Box by Vertical Systems &middot; Part of the OpenClaw ecosystem</p>
+  </footer>
+
+</div>
+</body>
+</html>

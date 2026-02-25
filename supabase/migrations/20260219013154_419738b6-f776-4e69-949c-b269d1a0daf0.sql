@@ -1,0 +1,1 @@
+ALTER TABLE public.office_agents ADD COLUMN IF NOT EXISTS bio text;

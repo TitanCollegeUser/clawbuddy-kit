@@ -1,0 +1,49 @@
+project_id = "cgitzpughnoghwotmtjv"
+
+[functions.ai-tasks]
+verify_jwt = false
+
+[functions.goal-analyzer]
+verify_jwt = false
+
+[functions.report-webhook]
+verify_jwt = false
+
+[functions.create-office-task]
+verify_jwt = false
+
+[functions.office-agent-status]
+verify_jwt = false
+
+[functions.reset-office]
+verify_jwt = false
+
+[functions.upload-office-deliverable]
+verify_jwt = false
+
+[functions.list-offices]
+verify_jwt = false
+
+[functions.manage-office-agent]
+verify_jwt = false
+
+[functions.intelligence-sync]
+verify_jwt = false
+
+[functions.subscribr-proxy]
+verify_jwt = false
+
+[functions.automation-runner]
+verify_jwt = false
+
+[functions.morning-digest]
+verify_jwt = false
+
+[functions.evening-report]
+verify_jwt = false
+
+[functions.midday-prep]
+verify_jwt = false
+
+[functions.competitor-intel]
+verify_jwt = false

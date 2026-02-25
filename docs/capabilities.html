@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ClawBuddy Capabilities | Mission Control for AI Agents</title>
+<style>
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --bg-primary: #0a0a0f;
+  --bg-card: rgba(16, 20, 30, 0.65);
+  --bg-card-hover: rgba(20, 28, 42, 0.8);
+  --border-card: rgba(239, 68, 68, 0.12);
+  --border-card-hover: rgba(239, 68, 68, 0.3);
+  --text-primary: #e8ecf4;
+  --text-secondary: #8b95a8;
+  --text-muted: #5a6478;
+  --accent-red: #ef4444;
+  --accent-orange: #f97316;
+  --accent-amber: #f59e0b;
+  --gradient-main: linear-gradient(135deg, #ef4444, #f97316, #f59e0b);
+  --gradient-glow: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(245, 158, 11, 0.08));
+  --gradient-text: linear-gradient(135deg, #ef4444 0%, #f97316 50%, #f59e0b 100%);
+  --shadow-glow: 0 0 40px rgba(239, 68, 68, 0.08);
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.3), 0 0 1px rgba(239, 68, 68, 0.1);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+
+.bg-grid {
+  position: fixed; inset: 0;
+  background-image: linear-gradient(rgba(239, 68, 68, 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(239, 68, 68, 0.03) 1px, transparent 1px);
+  background-size: 60px 60px;
+  pointer-events: none; z-index: 0;
+}
+
+.bg-radial-top {
+  position: fixed; top: -30%; left: 50%; transform: translateX(-50%);
+  width: 120%; height: 80%;
+  background: radial-gradient(ellipse at center, rgba(239, 68, 68, 0.06) 0%, transparent 65%);
+  pointer-events: none; z-index: 0;
+}
+
+.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+/* Header */
+.hero { text-align: center; padding: 80px 0 60px; }
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2);
+  padding: 6px 16px; border-radius: 100px; font-size: 13px; color: var(--accent-red);
+  margin-bottom: 24px; font-weight: 500;
+}
+.hero h1 {
+  font-size: clamp(2.2rem, 5vw, 3.5rem); font-weight: 700; line-height: 1.15;
+  margin-bottom: 20px;
+}
+.hero h1 .gradient { background: var(--gradient-text); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+.hero p { font-size: 1.15rem; color: var(--text-secondary); max-width: 700px; margin: 0 auto; }
+
+/* Section */
+.section { padding: 60px 0; }
+.section-title {
+  font-size: 1.6rem; font-weight: 600; margin-bottom: 12px; text-align: center;
+}
+.section-subtitle {
+  font-size: 1rem; color: var(--text-secondary); text-align: center; max-width: 600px; margin: 0 auto 40px;
+}
+
+/* Cards Grid */
+.cards-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 20px;
+}
+
+.card {
+  background: var(--bg-card); border: 1px solid var(--border-card);
+  border-radius: var(--radius); padding: 28px;
+  transition: var(--transition);
+}
+.card:hover {
+  background: var(--bg-card-hover); border-color: var(--border-card-hover);
+  box-shadow: var(--shadow-glow); transform: translateY(-2px);
+}
+.card-icon {
+  width: 48px; height: 48px; border-radius: 12px;
+  background: var(--gradient-glow); border: 1px solid rgba(239, 68, 68, 0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; margin-bottom: 16px;
+}
+.card h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 8px; }
+.card p { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; }
+.card-tag {
+  display: inline-block; font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.5px; padding: 3px 8px; border-radius: 4px; margin-top: 12px;
+  background: rgba(239, 68, 68, 0.1); color: var(--accent-red);
+}
+
+/* Stats Bar */
+.stats-bar {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px; padding: 40px 0;
+}
+.stat {
+  text-align: center; padding: 20px;
+  background: var(--bg-card); border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+}
+.stat-value {
+  font-size: 2rem; font-weight: 700;
+  background: var(--gradient-text); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.stat-label { font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px; }
+
+/* Architecture */
+.arch-block {
+  background: var(--bg-card); border: 1px solid var(--border-card);
+  border-radius: var(--radius); padding: 32px; margin: 20px 0;
+}
+.arch-block pre {
+  font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.85rem;
+  color: var(--text-secondary); line-height: 1.8; overflow-x: auto;
+}
+
+/* Agent Types */
+.agents-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px; margin-top: 32px;
+}
+.agent-card {
+  background: var(--bg-card); border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm); padding: 24px; text-align: center;
+  transition: var(--transition);
+}
+.agent-card:hover { border-color: var(--border-card-hover); }
+.agent-icon { font-size: 2.5rem; margin-bottom: 12px; }
+.agent-name { font-weight: 600; font-size: 1rem; margin-bottom: 4px; }
+.agent-desc { font-size: 0.85rem; color: var(--text-secondary); }
+
+/* CTA */
+.cta-section {
+  text-align: center; padding: 80px 0 60px;
+}
+.cta-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--gradient-main); color: #fff; font-weight: 600;
+  padding: 14px 32px; border-radius: 10px; text-decoration: none;
+  font-size: 1rem; transition: var(--transition);
+}
+.cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(239, 68, 68, 0.3); }
+
+/* Footer */
+.footer {
+  text-align: center; padding: 40px 0; border-top: 1px solid rgba(239, 68, 68, 0.08);
+  color: var(--text-muted); font-size: 0.85rem;
+}
+
+@media (max-width: 768px) {
+  .cards-grid { grid-template-columns: 1fr; }
+  .agents-grid { grid-template-columns: repeat(2, 1fr); }
+  .hero { padding: 60px 0 40px; }
+}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-radial-top"></div>
+
+<div class="container">
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-badge">OpenClaw + Claude Code</div>
+    <h1>Your AI Agent Gets a <span class="gradient">Command Center</span></h1>
+    <p>ClawBuddy gives any AI agent a real-time dashboard with task tracking, automated workflows, self-improving intelligence, and an animated office. Fork, deploy, connect.</p>
+  </section>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat">
+      <div class="stat-value">20</div>
+      <div class="stat-label">Feature Areas</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">18</div>
+      <div class="stat-label">Edge Functions</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">51</div>
+      <div class="stat-label">DB Migrations</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value">5</div>
+      <div class="stat-label">Agent Types</div>
+    </div>
+  </div>
+
+  <!-- Core Features -->
+  <section class="section">
+    <h2 class="section-title">Core Capabilities</h2>
+    <p class="section-subtitle">Everything your agent needs to be visible, trackable, and autonomous.</p>
+
+    <div class="cards-grid">
+
+      <div class="card">
+        <div class="card-icon">&#128203;</div>
+        <h3>Kanban Task Board</h3>
+        <p>5-column board (To Do, Doing, Needs Input, Canceled, Done) with real-time updates. Agents create, move, and complete tasks. Subtasks for granular tracking.</p>
+        <span class="card-tag">Core</span>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">&#128221;</div>
+        <h3>AI Activity Log</h3>
+        <p>Agents journal every decision, observation, and discovery. Categorized entries (general, observation, reminder, FYI) with unread badges and search.</p>
+        <span class="card-tag">Core</span>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">&#10067;</div>
+        <h3>Questions & Approvals</h3>
+        <p>Async Q&A between you and your agent. When the agent is stuck, it asks through the dashboard. You answer on your schedule. Full decision history.</p>
+        <span class="card-tag">Core</span>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">&#128200;</div>
+        <h3>Insights & Analytics</h3>
+        <p>Agents push performance cards, alerts, summaries, and suggestions. Real-time analytics that appear on your dashboard as work completes.</p>
+        <span class="card-tag">Core</span>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">&#128196;</div>
+        <h3>HTML Reports</h3>
+        <p>Formatted, styled reports generated by your agent. Employee reports, insight summaries, competitive analysis. Stored and searchable.</p>
+        <span class="card-tag">Core</span>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">&#127919;</div>
+        <h3>Agent Status Ring</h3>
+        <p>Real-time presence indicator. Green = working, Yellow = waiting, Red = blocked, Gray = offline. See exactly what your agent is doing at a glance.</p>
+        <span class="card-tag">Core</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Automation Features -->
+  <section class="section">
+    <h2 class="section-title">Automation Engine</h2>
+    <p class="section-subtitle">Scheduled workflows that run without you touching anything.</p>
+
+    <div class="cards-grid">
+
+      <div class="card">
+        <div class="card-icon">&#9200;</div>
+        <h3>Scheduled Automations</h3>
+        <p>Define cron-based automations that run via pg_cron. Morning digests, evening reports, competitor intel, meeting prep. Full execution tracking.</p>
+        <span class="card-tag">Automation</span>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">&#129504;</div>
+        <h3>Sherlock Brain</h3>
+        <p>Self-improving AI that analyzes past runs, computes health scores, auto-tunes settings, and discovers stale tasks. Runs every 4 hours automatically.</p>
+        <span class="card-tag">Automation</span>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">&#128232;</div>
+        <h3>Multi-Channel Delivery</h3>
+        <p>Automation results delivered via dashboard, AgentMail, Resend email, Telegram, or Discord. Configure channels per automation.</p>
+        <span class="card-tag">Automation</span>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">&#128269;</div>
+        <h3>AI Web Research</h3>
+        <p>Browser research with configurable AI providers (OpenAI, Anthropic, Kimi, Groq). Research any URL or topic. Results auto-stored in your dashboard.</p>
+        <span class="card-tag">Automation</span>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">&#128197;</div>
+        <h3>Calendar Integration</h3>
+        <p>Sync with Google Calendar via Make.com. Search upcoming events, create new ones. Calendar data flows into morning digests and meeting prep.</p>
+        <span class="card-tag">Automation</span>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">&#128202;</div>
+        <h3>Competitor Intelligence</h3>
+        <p>Track YouTube channels, detect viral content, analyze competitor strategies. Full HTML reports with engagement metrics and trend alerts.</p>
+        <span class="card-tag">Automation</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Platform Features -->
+  <section class="section">
+    <h2 class="section-title">Platform Features</h2>
+    <p class="section-subtitle">The infrastructure that makes everything work together.</p>
+
+    <div class="cards-grid">
+
+      <div class="card">
+        <div class="card-icon">&#127959;</div>
+        <h3>OpsCenter</h3>
+        <p>Modular app system with pages and blocks. Build custom dashboards for any domain: YouTube analytics, meeting intelligence, research hub. 19 block types.</p>
+        <span class="card-tag">Platform</span>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">&#129302;</div>
+        <h3>Multi-Agent System</h3>
+        <p>Run multiple agents with distinct identities, skills, and memory. Each agent has its own name, emoji, status ring, and skill set.</p>
+        <span class="card-tag">Platform</span>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">&#127968;</div>
+        <h3>Animated Office</h3>
+        <p>2D animated workspace where agents appear as characters. Real-time status updates, thought bubbles, and task assignments. Visual agent monitoring.</p>
+        <span class="card-tag">Platform</span>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">&#128171;</div>
+        <h3>Skill Factory</h3>
+        <p>Define configurable API skills for your agents. Each skill has parameters, validation, and version control. Fork-ready skill templates.</p>
+        <span class="card-tag">Platform</span>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">&#129513;</div>
+        <h3>Cognitive Memory</h3>
+        <p>Persistent knowledge base. Agents submit what they learn, you approve. Memories carry across sessions. Structured knowledge management.</p>
+        <span class="card-tag">Platform</span>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">&#127942;</div>
+        <h3>Goals Lab</h3>
+        <p>Submit business goals and get AI-powered decomposition into actionable tasks. Goals flow directly into the Kanban board for execution.</p>
+        <span class="card-tag">Platform</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Compatible Agents -->
+  <section class="section">
+    <h2 class="section-title">Works With Any Agent</h2>
+    <p class="section-subtitle">One REST API. Connect anything that can make HTTP requests.</p>
+
+    <div class="agents-grid">
+      <div class="agent-card">
+        <div class="agent-icon">&#129425;</div>
+        <div class="agent-name">Claude Code</div>
+        <div class="agent-desc">Drop CLAUDE.md in your project. It just works.</div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-icon">&#128034;</div>
+        <div class="agent-name">OpenClaw</div>
+        <div class="agent-desc">REST API integration. Full feature access.</div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-icon">&#128013;</div>
+        <div class="agent-name">Python Agent</div>
+        <div class="agent-desc">Built-in helper function. 5 lines to connect.</div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-icon">&#9889;</div>
+        <div class="agent-name">Node.js Agent</div>
+        <div class="agent-desc">Standard fetch() calls. Zero dependencies.</div>
+      </div>
+      <div class="agent-card">
+        <div class="agent-icon">&#128295;</div>
+        <div class="agent-name">Custom Agent</div>
+        <div class="agent-desc">Any language. Any framework. Just POST JSON.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Architecture -->
+  <section class="section">
+    <h2 class="section-title">Architecture</h2>
+    <p class="section-subtitle">Built on Supabase. Runs on the free tier.</p>
+
+    <div class="arch-block">
+      <pre>
+  Your AI Agent (Claude Code / OpenClaw / Custom)
+       |
+       | POST /functions/v1/ai-tasks
+       | x-webhook-secret: YOUR_SECRET
+       v
+  +-----------------------+
+  |   Supabase Edge       |
+  |   Functions (18)      |
+  |                       |
+  |  ai-tasks (core API)  |
+  |  automation-runner     |
+  |  sherlock-brain        |
+  |  morning-digest        |
+  |  evening-report        |
+  |  browser-research      |
+  |  calendar-sync         |
+  |  + 11 more             |
+  +-----------+-----------+
+              |
+              v
+  +-----------------------+
+  |   PostgreSQL (Supabase)|
+  |                       |
+  |  tasks, subtasks      |
+  |  ai_logs, ai_insights |
+  |  automations          |
+  |  ops_data (OpsCenter) |
+  |  agent_learning_log   |
+  |  + 20 more tables     |
+  +-----------+-----------+
+              |
+              v
+  +-----------------------+
+  |   Delivery Channels   |
+  |                       |
+  |  Dashboard (real-time)|
+  |  AgentMail            |
+  |  Telegram / Discord   |
+  |  Email (Resend)       |
+  +-----------------------+
+      </pre>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta-section">
+    <h2 class="section-title">Ready to Build?</h2>
+    <p class="section-subtitle" style="margin-bottom: 32px;">Fork the repo. Deploy in 20 minutes. Connect your agent.</p>
+    <a href="https://github.com/openclaw/clawbuddy-kit" class="cta-btn">Fork on GitHub &#8594;</a>
+  </section>
+
+  <footer class="footer">
+    <p>ClawBuddy by Vertical Systems &middot; Part of the OpenClaw ecosystem</p>
+  </footer>
+
+</div>
+</body>
+</html>

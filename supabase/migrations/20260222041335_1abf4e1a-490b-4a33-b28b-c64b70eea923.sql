@@ -1,0 +1,1 @@
+ALTER TABLE public.task_assignees DROP CONSTRAINT IF EXISTS task_assignees_user_id_fkey;
