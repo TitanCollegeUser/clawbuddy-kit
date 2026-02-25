@@ -84,37 +84,11 @@ This creates:
 
 ---
 
-## Step 4: Activate Your License
-
-Every ClawBuddy installation requires a license key. You received an activation code when you joined the [Agents in a Box](https://www.skool.com/aibox/about) community.
-
-```bash
-# Activate your license (replace with your actual code and project ref)
-curl -X POST https://api.clawbuddy.com/functions/v1/activate-license \
-  -H "Content-Type: application/json" \
-  -d '{
-    "activation_code": "YOUR-ACTIVATION-CODE",
-    "project_ref": "YOUR_PROJECT_REF",
-    "owner_email": "you@example.com",
-    "owner_name": "Your Name"
-  }'
-```
-
-This returns a `license_token`. Save it — you'll need it in the next step.
-
-> **Note:** Each activation code works with one Supabase project. If you need to move your license, contact support in the community.
-
----
-
-## Step 5: Set Supabase Secrets
+## Step 4: Set Supabase Secrets
 
 Edge functions need secrets to operate. Set them via the CLI or Dashboard:
 
 ```bash
-# License (required -- from Step 4)
-supabase secrets set CLAWBUDDY_LICENSE_TOKEN="cb_your-token-from-step-4"
-supabase secrets set LICENSE_VERIFY_KEY="your-verify-key"
-
 # Required secrets
 supabase secrets set CLAWBUDDY_WEBHOOK_SECRET=your-webhook-secret
 supabase secrets set AI_TASKS_API_KEY=your-api-key
@@ -125,11 +99,9 @@ supabase secrets set OPENAI_API_KEY=sk-your-openai-key        # Brain reports + 
 supabase secrets set MAKE_API_TOKEN=your-make-token            # Calendar sync
 ```
 
-> **Where's `LICENSE_VERIFY_KEY`?** It's provided alongside your activation code in the community. This key lets your ClawBuddy instance verify the license token locally without calling an external server.
-
 ---
 
-## Step 6: Deploy Edge Functions
+## Step 5: Deploy Edge Functions
 
 Deploy all edge functions to your Supabase project:
 
@@ -179,7 +151,7 @@ done
 
 ---
 
-## Step 7: Create Your First User
+## Step 6: Create Your First User
 
 Your agent needs a user record to assign tasks to. Run this SQL in the Supabase SQL Editor (Dashboard > SQL Editor):
 
@@ -200,7 +172,7 @@ Save the returned `user_id` -- your agent will reference it.
 
 ---
 
-## Step 8: Register Your Webhook Secret
+## Step 7: Register Your Webhook Secret
 
 The webhook secret authenticates your agent's API requests. Store it in your Supabase project:
 
@@ -214,7 +186,7 @@ Or set it as a Supabase secret (already done in Step 4).
 
 ---
 
-## Step 9: Connect Your Agent
+## Step 8: Connect Your Agent
 
 ### Claude Code
 
@@ -291,7 +263,7 @@ clawbuddy("task", "update", task_id=task_id, column="done")
 
 ---
 
-## Step 10: Set Up Automations (Optional)
+## Step 9: Set Up Automations (Optional)
 
 Register automations to run on a schedule via pg_cron:
 
@@ -315,7 +287,7 @@ The `sync_automation_cron` trigger automatically creates the pg_cron job when yo
 
 ---
 
-## Step 11: Verify Everything Works
+## Step 10: Verify Everything Works
 
 Run through this checklist:
 
@@ -353,7 +325,6 @@ If all 4 return `{"success": true, ...}` -- you're live.
 
 | Issue | Fix |
 |-------|-----|
-| `License required` on API calls | Activate your license (Step 4) and set `CLAWBUDDY_LICENSE_TOKEN` + `LICENSE_VERIFY_KEY` in Supabase secrets |
 | `Unauthorized` on API calls | Check your `x-webhook-secret` header matches the secret in Supabase |
 | `Function not found` | Make sure you ran `supabase functions deploy` for that function |
 | Migrations fail | Check you're linked to the right project: `supabase link --project-ref YOUR_REF` |

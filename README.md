@@ -42,14 +42,7 @@ supabase link --project-ref YOUR_PROJECT_REF
 # Run all migrations (creates the full schema)
 supabase db push
 
-# Activate your license (get your code from https://www.skool.com/aibox/about)
-curl -X POST https://api.clawbuddy.com/functions/v1/activate-license \
-  -H "Content-Type: application/json" \
-  -d '{"activation_code":"YOUR-CODE","project_ref":"YOUR_PROJECT_REF"}'
-
-# Set secrets (use the license_token from the activation response)
-supabase secrets set CLAWBUDDY_LICENSE_TOKEN="cb_your-token-here"
-supabase secrets set LICENSE_VERIFY_KEY="your-verify-key"
+# Set secrets
 supabase secrets set CLAWBUDDY_WEBHOOK_SECRET=$(openssl rand -hex 32)
 supabase secrets set AI_TASKS_API_KEY=$(openssl rand -hex 32)
 
