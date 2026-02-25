@@ -6,6 +6,86 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-api-key, x-webhook-secret",
 };
 
+// ============ LICENSE VERIFICATION ============
+
+async function verifyLicense(): Promise<{ valid: boolean; error?: string }> {
+  const token = Deno.env.get("CLAWBUDDY_LICENSE_TOKEN");
+  const verifyKey = Deno.env.get("LICENSE_VERIFY_KEY");
+
+  if (!token || !verifyKey) {
+    return { valid: false, error: "License not configured. Visit https://www.skool.com/aibox/about to get your activation code." };
+  }
+
+  try {
+    // Token format: cb_<base64url_payload>.<base64url_signature>
+    if (!token.startsWith("cb_")) {
+      return { valid: false, error: "Invalid license token format." };
+    }
+
+    const tokenBody = token.slice(3); // Remove "cb_" prefix
+    const dotIndex = tokenBody.lastIndexOf(".");
+    if (dotIndex === -1) {
+      return { valid: false, error: "Invalid license token format." };
+    }
+
+    const payloadB64 = tokenBody.slice(0, dotIndex);
+    const signatureB64 = tokenBody.slice(dotIndex + 1);
+
+    // Verify HMAC-SHA256 signature
+    const encoder = new TextEncoder();
+    const cryptoKey = await crypto.subtle.importKey(
+      "raw",
+      encoder.encode(verifyKey),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["verify"]
+    );
+
+    // Decode base64url signature
+    const sigStr = signatureB64.replace(/-/g, "+").replace(/_/g, "/");
+    const sigPadded = sigStr + "=".repeat((4 - (sigStr.length % 4)) % 4);
+    const sigBytes = Uint8Array.from(atob(sigPadded), (c) => c.charCodeAt(0));
+
+    const isValid = await crypto.subtle.verify(
+      "HMAC",
+      cryptoKey,
+      sigBytes,
+      encoder.encode(payloadB64)
+    );
+
+    if (!isValid) {
+      return { valid: false, error: "License signature invalid. Re-activate at https://www.skool.com/aibox/about" };
+    }
+
+    // Decode and check expiry
+    const payloadStr = payloadB64.replace(/-/g, "+").replace(/_/g, "/");
+    const payloadPadded = payloadStr + "=".repeat((4 - (payloadStr.length % 4)) % 4);
+    const payload = JSON.parse(atob(payloadPadded));
+
+    if (payload.expires_at && new Date(payload.expires_at) < new Date()) {
+      return { valid: false, error: "License expired. Renew your membership at https://www.skool.com/aibox/about" };
+    }
+
+    return { valid: true };
+  } catch (err) {
+    console.error("License verification error:", err);
+    return { valid: false, error: "License verification failed." };
+  }
+}
+
+// Cache license result for 5 minutes to avoid re-verifying every request
+let _licenseCache: { valid: boolean; error?: string; checkedAt: number } | null = null;
+const LICENSE_CACHE_MS = 5 * 60 * 1000;
+
+async function checkLicense(): Promise<{ valid: boolean; error?: string }> {
+  if (_licenseCache && (Date.now() - _licenseCache.checkedAt) < LICENSE_CACHE_MS) {
+    return _licenseCache;
+  }
+  const result = await verifyLicense();
+  _licenseCache = { ...result, checkedAt: Date.now() };
+  return result;
+}
+
 // Column name mapping (case-insensitive)
 const columnMapping: Record<string, string> = {
   "to do": "To Do",
@@ -589,6 +669,18 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // ── License gate ──
+    const license = await checkLicense();
+    if (!license.valid) {
+      return new Response(
+        JSON.stringify({
+          error: "License required",
+          message: license.error || "A valid ClawBuddy license is required. Join the community at https://www.skool.com/aibox/about to activate.",
+        }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     // Parse request body for POST/PATCH/DELETE
     let body: Record<string, unknown> = {};
     if (req.method !== "GET") {
