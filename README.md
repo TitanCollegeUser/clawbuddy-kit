@@ -1,5 +1,7 @@
 # ClawBuddy -- Mission Control for AI Agents
 
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/mkanasani/clawbuddy-kit)
+
 ClawBuddy is an AI command center that makes your AI agents visible, trackable, and autonomous. Built on Supabase, it gives any AI agent -- whether OpenClaw, Claude Code, or custom -- a full operational dashboard with real-time task tracking, automated workflows, and self-improving intelligence.
 
 **What your agent gets:**
@@ -22,7 +24,7 @@ ClawBuddy is an AI command center that makes your AI agents visible, trackable, 
 
 Click **Fork** in the top-right corner of this page.
 
-### 2. Set up Supabase
+### 2. Set up Supabase (backend)
 
 Create a free Supabase project at [supabase.com](https://supabase.com), then deploy the backend:
 
@@ -30,38 +32,75 @@ Create a free Supabase project at [supabase.com](https://supabase.com), then dep
 # Install Supabase CLI
 npm install -g supabase
 
-# Link to your project
+# Clone your fork
+git clone https://github.com/YOUR_USERNAME/clawbuddy-kit.git
 cd clawbuddy-kit
+
+# Link to your Supabase project
 supabase link --project-ref YOUR_PROJECT_REF
 
-# Run all migrations (sets up the full schema)
+# Run all migrations (creates the full schema)
 supabase db push
 
+# Set secrets
+supabase secrets set CLAWBUDDY_WEBHOOK_SECRET=$(openssl rand -hex 32)
+supabase secrets set AI_TASKS_API_KEY=$(openssl rand -hex 32)
+
 # Deploy all edge functions
-supabase functions deploy ai-tasks --no-verify-jwt
-supabase functions deploy automation-runner --no-verify-jwt
-supabase functions deploy sherlock-brain --no-verify-jwt
-# ... deploy each function (see SETUP.md for full list)
+for fn in ai-tasks automation-runner sherlock-brain morning-digest evening-report midday-prep competitor-intel intelligence-sync browser-research calendar-sync goal-analyzer report-webhook list-offices manage-office-agent create-office-task office-agent-status reset-office upload-office-deliverable; do
+  supabase functions deploy $fn --no-verify-jwt
+done
 ```
 
-### 3. Set environment variables
+### 3. Deploy frontend (dashboard)
+
+Click the **Deploy to Netlify** button above, or manually:
 
 ```bash
+# Set your environment variables
 cp .env.example .env
-# Fill in your Supabase URL, keys, and API tokens
+# Edit .env with your Supabase URL and keys
+
+# Install and build
+npm install
+npm run build
 ```
+
+In Netlify, set these environment variables (Site Settings > Environment Variables):
+- `VITE_SUPABASE_URL` = `https://YOUR_PROJECT_REF.supabase.co`
+- `VITE_SUPABASE_PUBLISHABLE_KEY` = your anon key
+- `VITE_CLAWBUDDY_WEBHOOK_SECRET` = your webhook secret
 
 ### 4. Connect your agent
 
-**For Claude Code agents** -- Copy `CLAUDE.md` to your project root and update the connection variables.
+**Claude Code** -- Copy `CLAUDE.md` to your project root. Update the connection variables. Done.
 
-**For OpenClaw agents** -- Use the API endpoint directly:
+**OpenClaw / Custom** -- Use the REST API:
 
 ```bash
-POST https://YOUR_PROJECT.supabase.co/functions/v1/ai-tasks
-Header: x-webhook-secret: YOUR_SECRET
-Body: {"request_type": "status", "action": "update", "is_online": true}
+curl -X POST https://YOUR_PROJECT.supabase.co/functions/v1/ai-tasks \
+  -H "Content-Type: application/json" \
+  -H "x-webhook-secret: YOUR_SECRET" \
+  -d '{"request_type": "status", "action": "update", "is_online": true}'
 ```
+
+See **[SETUP.md](SETUP.md)** for the full 10-step walkthrough.
+
+---
+
+## Updating
+
+When a new version is released, run the update script:
+
+```bash
+# Set upstream (one-time)
+git remote add upstream https://github.com/mkanasani/clawbuddy-kit.git
+
+# Update everything
+./update.sh
+```
+
+This pulls the latest code, applies new database migrations, and redeploys edge functions. Your frontend auto-deploys if connected to Netlify.
 
 ---
 
@@ -69,30 +108,30 @@ Body: {"request_type": "status", "action": "update", "is_online": true}
 
 ```
 clawbuddy-kit/
-├── SETUP.md                 # Detailed setup guide
-├── CLAUDE.md                # Agent instructions template (Claude Code)
-├── .env.example             # Environment variables template
+├── src/                     # React frontend (dashboard)
+├── public/                  # Static assets
+├── supabase/
+│   ├── functions/           # 18 edge functions
+│   │   ├── ai-tasks/        # Core API (tasks, logs, insights, questions, etc.)
+│   │   ├── automation-runner/   # Scheduled automation orchestrator
+│   │   ├── sherlock-brain/  # Self-improving AI brain
+│   │   ├── morning-digest/  # Daily morning briefing
+│   │   ├── evening-report/  # Daily evening summary
+│   │   ├── midday-prep/     # Midday preparation
+│   │   ├── competitor-intel/ # Competitive intelligence
+│   │   ├── browser-research/ # AI web research
+│   │   ├── calendar-sync/   # Google Calendar bridge
+│   │   └── ... (+ 9 more)
+│   └── migrations/          # 51 SQL migrations (full schema)
 ├── docs/
 │   ├── capabilities.html    # Feature showcase
 │   ├── community-features.html  # Community features showcase
 │   └── integration-guide.md # Full API reference (20 feature areas)
-└── supabase/
-    ├── config.toml          # Supabase project config
-    ├── functions/           # 18 edge functions
-    │   ├── ai-tasks/        # Core API (tasks, logs, insights, questions, etc.)
-    │   ├── automation-runner/   # Scheduled automation orchestrator
-    │   ├── sherlock-brain/  # Self-improving AI brain
-    │   ├── morning-digest/  # Daily morning briefing
-    │   ├── evening-report/  # Daily evening summary
-    │   ├── midday-prep/     # Midday preparation
-    │   ├── competitor-intel/ # Competitive intelligence
-    │   ├── intelligence-sync/ # Data synchronization
-    │   ├── calendar-sync/   # Google Calendar bridge
-    │   ├── browser-research/ # AI web research
-    │   ├── goal-analyzer/   # Business goal decomposition
-    │   ├── report-webhook/  # Webhook payload processor
-    │   └── ... (office system functions)
-    └── migrations/          # 51 SQL migrations (full schema)
+├── CLAUDE.md                # Agent instructions template
+├── SETUP.md                 # Detailed setup guide
+├── update.sh                # One-command updater
+├── netlify.toml             # Netlify deploy config
+└── .env.example             # Environment variables template
 ```
 
 ---

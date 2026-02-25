@@ -1,0 +1,13 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Environment variables needed (set in Netlify Dashboard > Site Settings > Environment Variables):
+# VITE_SUPABASE_URL = https://YOUR_PROJECT_REF.supabase.co
+# VITE_SUPABASE_PUBLISHABLE_KEY = your-anon-key
+# VITE_CLAWBUDDY_WEBHOOK_SECRET = your-webhook-secret

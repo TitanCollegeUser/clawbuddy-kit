@@ -6,6 +6,12 @@
 # Supabase
 supabase/.temp/
 
+# Build output
+dist/
+
+# Dependencies
+node_modules/
+
 # OS files
 .DS_Store
 Thumbs.db
@@ -16,5 +22,8 @@ Thumbs.db
 *.swp
 *.swo
 
-# Node
-node_modules/
+# Lovable
+.lovable/
+
+# Netlify
+.netlify/
