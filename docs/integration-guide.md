@@ -1,6 +1,6 @@
 # ClawBuddy Integration Guide v3.0.0
 
-> Last updated: February 24, 2026
+> Last updated: February 25, 2026
 > Source of truth: Audited directly from `ai-tasks/index.ts` (4,852 lines) and 15 Edge Functions.
 > Supabase project: `YOUR_PROJECT_REF`
 
@@ -829,6 +829,19 @@ The modular app/page/block/data system for custom dashboards.
 | `remove_block` | `block_id` | -- |
 | `reorder_blocks` | `block_ids` (string[]) | -- |
 
+#### Block Type Config Reference
+
+Each block type requires specific fields in `config` to render correctly. A block with data but no proper config will appear empty.
+
+| Block Type | Required Config | Notes |
+|------------|----------------|-------|
+| `table` | `columns` (array of `{key, label, width?, format?}`) | Supports nested dot-notation keys (e.g., `data.field.nested`). Optional: `sortable`, `filterable`, `default_sort` |
+| `metric_cards` | `cards` (array of `{label, value_path, icon?, color?, format?}`) | `value_path` options: `data.field` (first matching record), `count:item_type`, `count:item_type:status`. Icon names are Lucide kebab-case. |
+| `feed` | `max_items` (number) | Optional: `show_agent_badge` (default true). Items render `title`, `metadata.agent` (for badge), `created_at` (relative timestamp). |
+| `alert_banner` | `message` (string), `severity` | **Config-driven — does NOT read ops_data.** Severity: `info`, `success`, `warning`, `urgent`. Optional: `subtitle`, `dismissible`, `action_label`, `action_link`. |
+| `kanban` | `columns` (array of `{id, title, color}`) | Items placed via `column_id` on ops_data. Optional: `enable_drag`, `card_fields`. |
+| `list` | -- | Optional: `show_timestamp`, `show_status_badge`, `max_items`. |
+
 ### Data Actions
 
 | Action | Required Params | Optional Params |
@@ -1236,6 +1249,16 @@ Receives external webhook payloads, queues as `raw_reports`. If `auto_process: t
 - **Bulk operations on large datasets:** For clearing or migrating >1,000 records, use the Supabase REST API directly (e.g., `DELETE /rest/v1/ops_data?app_id=eq.{id}`) rather than looping through `list_data` + `delete_data`.
 - **`update_data` REPLACES the entire `data` field** — it does NOT merge. When updating, you must include ALL existing fields plus new ones, or previous data will be lost. Read-then-update pattern required for partial updates.
 - **Feature card reports:** Always store `report_id` and `report_title` in ops_data when generating reports so the frontend can link directly. Never use "Pipeline" in report titles — the frontend filters those out.
+
+### OpsCenter Block Rendering Gotchas
+
+- **`alert_banner` is config-driven, NOT data-driven.** The component reads `config.message` directly — it never reads ops_data records. If `config.message` is missing, the component returns `null` (invisible). Storing alert data as ops_data records in an `alert_banner` block will not render. Use a `feed` block instead if you need multiple alerts.
+- **`metric_cards` `data.field` paths are single-depth only.** The `computeValue()` function does `item.data?.[field]` — meaning `data.average_health` looks up `item.data['average_health']`. It does NOT support nested dot notation like `data.after.health_score`. Use `count:item_type` paths for counting records by type.
+- **`metric_cards` fetches ALL app items** (no `blockId` filter). The `useOpsData({ appId })` hook pulls every record in the app, then computes values across them. Keep this in mind for apps with many records.
+- **`table` blocks DO support nested dot-notation** via `getNestedValue()`. Column keys like `data.after.health_score` correctly traverse `item.data.after.health_score`.
+- **`feed` items need `metadata.agent`** for agent badge rendering. Without `metadata: {"agent": "AgentName"}`, items render but show no agent badge. Always set `metadata.agent` when creating feed records.
+- **`list_data` response key differs by filter.** Without `block_id`, response uses `data` key. With `block_id`, response uses `items` key. Always check both keys when parsing responses.
+- **Block configs must be set explicitly.** Creating a block with `config: {}` and then adding data will show "No data yet" in the frontend even though records exist in the database. Set the component-specific config (see Block Type Config Reference above) BEFORE or alongside data population.
 
 ### Task Gotchas
 
