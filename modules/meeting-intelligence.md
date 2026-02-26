@@ -150,6 +150,44 @@ If you want upcoming calendar events to appear:
 
 ---
 
+## Frontend Components
+
+The kit includes two specialized Lovable-built components for Meeting Intelligence:
+
+### OpsMeetingIntelBlock (`block_type: "meeting_intel"`)
+
+The main meeting dashboard block (656 lines). Features:
+- **Search bar** — Filter meetings by title
+- **Meeting type distribution** — Recharts donut chart with 13 color-coded meeting types
+- **Monthly trend** — Bar chart of meetings over time
+- **Inline detail panels** — Click a meeting to expand summary, action items, attendees, AI insights
+- **"Send To..." dropdown** — Queue any meeting to Action Items, Proposals, or Lead Magnets feature pipelines
+- **Pagination** — 25 meetings per page
+- **DOMPurify** — Sanitizes HTML in AI-generated summaries
+- **8 dashboard sections:** KPI cards, charts, quick actions, upcoming meetings, action items, contact cloud, intelligence, meeting feed
+
+### OpsMeetingFeatureBlock (routed by block ID, not block_type)
+
+Specialized block for feature pipeline pages — Action Items, Proposals, Lead Magnets (632 lines). The database stores these as `block_type: "feed"` but the frontend routes them by block ID to this component.
+
+Features:
+- **Status-aware cards** — Visual indicators for queued, processing, complete, error, needs_input
+- **Status filtering bar** — Filter by pipeline status
+- **View Report button** — Fetches generated reports (looks up by report_id, then title, then fuzzy match)
+- **Retry/Delete actions** — Error recovery and cleanup
+- **Processing indicators** — Animated states for in-progress items
+
+**Block ID routing (in OpsBlockRenderer.tsx):**
+```
+Action Items: c64fdaaf-67e5-49b2-94a3-9d0688e3fae0
+Proposals:    0dee583a-84aa-4bd6-88fb-93f998e2bfac
+Lead Magnets: 8622e572-0e4a-427f-bfc6-4fc689009df3
+```
+
+These IDs are checked before the `block_type` switch statement, so the generic feed renderer is bypassed.
+
+---
+
 ## Usage
 
 **Adding a meeting (agent does this after each call):**
@@ -180,6 +218,9 @@ If you want upcoming calendar events to appear:
 {"request_type": "ops", "action": "list_data", "app_id": "<app_id>", "block_id": "<meeting_feed_block_id>"}
 ```
 
+**Queuing a meeting for feature processing (frontend does this via Send To dropdown):**
+The OpsMeetingIntelBlock has a "Send To..." dropdown on each meeting card that queues it to Action Items, Proposals, or Lead Magnets. This calls the ai-tasks edge function directly with the meeting data and target block ID.
+
 **Prepping for a meeting (agent reads calendar + past meetings with that contact):**
 The agent can list calendar events, find past meetings with the same attendees, and generate a prep brief using the data already stored.
 
@@ -188,3 +229,8 @@ The agent can list calendar events, find past meetings with the same attendees, 
 ## Automation Integration
 
 The **Midday Prep** automation (already in the kit) can read from this module to generate meeting preparation briefs. Make sure the automation's config references this app's `app_id`.
+
+The **Meeting Intel automation** processes the feature pipeline:
+1. Picks up `queued` items, fetches transcripts, posts questions → `needs_input`
+2. Matches answered questions → `answered`
+3. Generates reports for answered items → `complete`

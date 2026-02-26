@@ -23,10 +23,30 @@ import { OpsOutreachPhoneBlock } from './blocks/OpsOutreachPhoneBlock';
 import { OpsOutreachEmailBlock } from './blocks/OpsOutreachEmailBlock';
 import { OpsOutreachCampaignsBlock } from './blocks/OpsOutreachCampaignsBlock';
 import { OpsOutreachResultsBlock } from './blocks/OpsOutreachResultsBlock';
+import { OpsEmployeeCampaignCreatorBlock } from './blocks/OpsEmployeeCampaignCreatorBlock';
+import { OpsEmployeeLeadTableBlock } from './blocks/OpsEmployeeLeadTableBlock';
+import { OpsEmployeeAnalyticsBlock } from './blocks/OpsEmployeeAnalyticsBlock';
+import { OpsMeetingIntelBlock } from './blocks/OpsMeetingIntelBlock';
+import { OpsMeetingFeatureBlock } from './blocks/OpsMeetingFeatureBlock';
+import { OpsYtDashboardBlock } from './blocks/OpsYtDashboardBlock';
+import { OpsYtAnalyticsBlock } from './blocks/OpsYtAnalyticsBlock';
+import { OpsYtCompetitorsBlock } from './blocks/OpsYtCompetitorsBlock';
+import { OpsYtBangerLabBlock } from './blocks/OpsYtBangerLabBlock';
+import { OpsYtPipelineBlock } from './blocks/OpsYtPipelineBlock';
+import { OpsYtScriptsBlock } from './blocks/OpsYtScriptsBlock';
+import { OpsYtIntelFeedBlock } from './blocks/OpsYtIntelFeedBlock';
+import { OpsYtOutlierFeedBlock } from './blocks/OpsYtOutlierFeedBlock';
 import { OpsBlockWrapper } from './blocks/OpsBlockWrapper';
 import { ResearchHubBlock } from './research-hub/ResearchHubBlock';
 
 const RESEARCH_HUB_APP_ID = '6149611f-1c3b-4906-9c5b-1fa58d0cd7ce';
+
+// Meeting Intelligence feature blocks (Action Items, Proposals, Lead Magnets)
+const MEETING_FEATURE_BLOCK_IDS = new Set([
+  'c64fdaaf-67e5-49b2-94a3-9d0688e3fae0', // Action Items
+  '0dee583a-84aa-4bd6-88fb-93f998e2bfac', // Proposals
+  '8622e572-0e4a-427f-bfc6-4fc689009df3', // Lead Magnets
+]);
 
 interface Props {
   block: OpsBlock;
@@ -39,6 +59,11 @@ const renderBlock = (block: OpsBlock, appId: string) => {
   // Research Hub custom rendering
   if (appId === RESEARCH_HUB_APP_ID) {
     return <ResearchHubBlock block={block} appId={appId} />;
+  }
+
+  // Meeting Intelligence feature blocks (override generic feed)
+  if (MEETING_FEATURE_BLOCK_IDS.has(block.id)) {
+    return <OpsMeetingFeatureBlock {...props} />;
   }
 
   switch (block.block_type) {
@@ -60,14 +85,27 @@ const renderBlock = (block: OpsBlock, appId: string) => {
     case 'gallery': return <OpsGalleryBlock {...props} />;
     case 'approval_queue': return <OpsApprovalQueueBlock {...props} />;
     case 'comparison': return <OpsComparisonBlock {...props} />;
-    // yt_* block types available via Creator Command Centre module
+    // Creator Command Centre blocks
+    case 'yt_dashboard': return <OpsYtDashboardBlock {...props} />;
+    case 'yt_analytics': return <OpsYtAnalyticsBlock {...props} />;
+    case 'yt_competitors': return <OpsYtCompetitorsBlock {...props} />;
+    case 'yt_banger_lab': return <OpsYtBangerLabBlock {...props} />;
+    case 'yt_pipeline': return <OpsYtPipelineBlock {...props} />;
+    case 'yt_scripts': return <OpsYtScriptsBlock {...props} />;
+    case 'yt_intel_feed': return <OpsYtIntelFeedBlock {...props} />;
+    case 'yt_outlier_feed': return <OpsYtOutlierFeedBlock {...props} />;
+    // Outreach blocks
     case 'outreach_scoreboard': return <OpsOutreachScoreboardBlock {...props} />;
     case 'outreach_leads': return <OpsOutreachLeadsBlock {...props} />;
     case 'outreach_phone': return <OpsOutreachPhoneBlock {...props} />;
     case 'outreach_email': return <OpsOutreachEmailBlock {...props} />;
     case 'outreach_campaigns': return <OpsOutreachCampaignsBlock {...props} />;
     case 'outreach_results': return <OpsOutreachResultsBlock {...props} />;
-    // meeting_intel block type available via Meeting Intelligence Engine module
+    // AI Employee blocks
+    case 'employee_campaign_creator': return <OpsEmployeeCampaignCreatorBlock {...props} />;
+    case 'employee_lead_table': return <OpsEmployeeLeadTableBlock {...props} />;
+    case 'employee_analytics': return <OpsEmployeeAnalyticsBlock {...props} />;
+    case 'meeting_intel': return <OpsMeetingIntelBlock {...props} />;
     case 'office':
       return (
         <div className="glass rounded-xl p-6 text-center">

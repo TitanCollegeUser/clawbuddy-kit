@@ -31,7 +31,13 @@ export const OpsTableBlock = ({ block, appId }: { block: OpsBlock; appId: string
   const [sortKey, setSortKey] = useState(defaultSort?.key || '');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>((defaultSort?.direction as 'asc' | 'desc') || 'desc');
 
-  const { data: items, isLoading } = useOpsData({ appId, blockId: block.id });
+  const useAppData = block.config.use_app_data as boolean;
+  const itemTypeFilter = block.config.item_type_filter as string | undefined;
+  const { data: items, isLoading } = useOpsData({
+    appId,
+    blockId: useAppData ? undefined : block.id,
+    itemType: useAppData ? itemTypeFilter : undefined,
+  });
 
   const sorted = useMemo(() => {
     if (!items || !sortKey) return items || [];

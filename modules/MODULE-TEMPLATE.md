@@ -65,27 +65,78 @@ Every module doc should follow this format:
 
 Use these `block_type` values when creating blocks:
 
+### Generic Blocks (work with any app)
+
 | Block Type | What It Displays |
 |-----------|-----------------|
 | `feed` | Scrollable list of items (most common) |
-| `kpi` | Key metric cards with numbers |
-| `chart` | Data visualizations |
-| `table` | Structured data table |
-| `config` | Settings/configuration panel |
+| `metric_cards` | Key metric cards with numbers |
+| `chart` | Data visualizations (Recharts) |
+| `table` | Structured data table with configurable columns |
 | `calendar` | Calendar view of events |
-| `notes` | Rich text notes |
-| `links` | Link collection |
+| `text` | Rich text content |
 | `timeline` | Chronological events |
 | `gallery` | Image/media grid |
 | `embed` | Embedded external content |
-| `markdown` | Markdown-rendered content |
-| `checklist` | Checkable item list |
-| `status` | Status indicators |
-| `metrics` | Multiple metric displays |
+| `list` | Simple scrollable list |
 | `comparison` | Side-by-side comparisons |
-| `kanban` | Kanban-style board |
-| `tree` | Hierarchical data |
-| `custom` | Custom HTML rendering |
+| `kanban` | Kanban-style board with drag-and-drop |
+| `form` | Data entry form |
+| `alert_banner` | Config-driven alert banner (NOT data-driven) |
+| `countdown` | Countdown timer |
+| `agent_card` | Agent identity card |
+| `approval_queue` | Approval workflow queue |
+| `progress_bar` | Progress indicator |
+
+### Creator Command Blocks (YouTube analytics)
+
+| Block Type | What It Displays |
+|-----------|-----------------|
+| `yt_dashboard` | Channel overview with subscriber/view KPIs |
+| `yt_analytics` | Deep analytics with charts and trends |
+| `yt_competitors` | Competitor tracking cards |
+| `yt_banger_lab` | Idea validation and scoring |
+| `yt_pipeline` | Content production pipeline |
+| `yt_scripts` | Script management and editing |
+| `yt_intel_feed` | Intelligence digest feed |
+| `yt_outlier_feed` | Viral outlier video detection |
+
+### Meeting Intelligence Blocks
+
+| Block Type | What It Displays |
+|-----------|-----------------|
+| `meeting_intel` | Full meeting dashboard with search, charts, inline detail panels, and "Send To" feature queue actions |
+
+> **Note:** Meeting Intelligence feature pages (Action Items, Proposals, Lead Magnets) use `block_type: "feed"` in the database but are routed to a specialized `OpsMeetingFeatureBlock` component via block ID matching. See the Meeting Intelligence module doc for details.
+
+### Outreach Blocks
+
+| Block Type | What It Displays |
+|-----------|-----------------|
+| `outreach_scoreboard` | Outreach metrics scoreboard |
+| `outreach_leads` | Lead management table |
+| `outreach_phone` | Phone outreach tracking |
+| `outreach_email` | Email outreach tracking |
+| `outreach_campaigns` | Campaign management |
+| `outreach_results` | Campaign results and analytics |
+
+### AI Employee Blocks
+
+| Block Type | What It Displays |
+|-----------|-----------------|
+| `employee_campaign_creator` | Campaign builder with personalization levels |
+| `employee_lead_table` | Employee lead management |
+| `employee_analytics` | Employee performance analytics |
+
+### Special Routing
+
+Some blocks use special routing that bypasses the `block_type` switch:
+
+| Routing Method | When It Triggers | Component |
+|---------------|-----------------|-----------|
+| App ID match | `appId === RESEARCH_HUB_APP_ID` | `ResearchHubBlock` |
+| Block ID match | Block ID in `MEETING_FEATURE_BLOCK_IDS` set | `OpsMeetingFeatureBlock` |
+| `block_type` switch | Default routing | Corresponding block component |
 
 ---
 

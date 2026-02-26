@@ -109,6 +109,13 @@ This pulls the latest code, applies new database migrations, and redeploys edge 
 ```
 clawbuddy-kit/
 ├── src/                     # React frontend (dashboard)
+│   └── components/ops-center/
+│       └── blocks/          # 30+ OpsCenter block components
+│           ├── OpsYt*.tsx         # 8 Creator Command (YouTube) blocks
+│           ├── OpsMeeting*.tsx    # 2 Meeting Intelligence blocks
+│           ├── OpsOutreach*.tsx   # 6 Outreach blocks
+│           ├── OpsEmployee*.tsx   # 3 AI Employee blocks
+│           └── Ops*.tsx           # 18 generic blocks (table, feed, kanban, etc.)
 ├── public/                  # Static assets
 ├── supabase/
 │   ├── functions/           # 18 edge functions
@@ -123,6 +130,13 @@ clawbuddy-kit/
 │   │   ├── calendar-sync/   # Google Calendar bridge
 │   │   └── ... (+ 9 more)
 │   └── migrations/          # 51 SQL migrations (full schema)
+├── modules/                 # Module instruction docs
+│   ├── MODULE-TEMPLATE.md       # Template for creating new modules
+│   ├── meeting-intelligence.md  # Meeting Intelligence (PepperPots) module
+│   ├── creator-command.md       # Creator Command (YouTube analytics) module
+│   ├── cognitive-memory.md      # Cognitive Memory module
+│   ├── supercharge-claude-code.md # Supercharge Claude Code module
+│   └── skill-library.md        # Skill Library module
 ├── docs/
 │   ├── capabilities.html    # Feature showcase
 │   ├── community-features.html  # Community features showcase
@@ -172,6 +186,22 @@ clawbuddy-kit/
 | **Identity** | Agent persona and config files |
 | **Learning** | Self-improving brain analysis |
 | **Office** | Animated 2D agent office |
+
+---
+
+## Modules
+
+Modules are pre-built OpsCenter apps with specialized block components. Each module doc contains setup instructions your AI agent can follow to provision the app on your instance.
+
+| Module | What It Does | Blocks |
+|--------|-------------|--------|
+| **[Meeting Intelligence](modules/meeting-intelligence.md)** | Meeting tracking, summaries, action items, proposals, lead magnets | `meeting_intel` + 3 feature blocks |
+| **[Creator Command](modules/creator-command.md)** | YouTube analytics, competitor tracking, content pipeline, outlier detection | 8 `yt_*` blocks |
+| **[Cognitive Memory](modules/cognitive-memory.md)** | Persistent agent knowledge base | Generic blocks |
+| **[Supercharge Claude Code](modules/supercharge-claude-code.md)** | Telegram bot, web research, automations, calendar, session management | Generic blocks |
+| **[Skill Library](modules/skill-library.md)** | Pre-built agent capabilities (23 skills, 34 operations) | Generic blocks |
+
+To create your own module, see **[Module Template](modules/MODULE-TEMPLATE.md)** for the standard format and all 37 available block types.
 
 ---
 

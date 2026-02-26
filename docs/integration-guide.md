@@ -853,14 +853,68 @@ The modular app/page/block/data system for custom dashboards.
 
 Each block type requires specific fields in `config` to render correctly. A block with data but no proper config will appear empty.
 
+**Generic Blocks:**
+
 | Block Type | Required Config | Notes |
 |------------|----------------|-------|
-| `table` | `columns` (array of `{key, label, width?, format?}`) | Supports nested dot-notation keys (e.g., `data.field.nested`). Optional: `sortable`, `filterable`, `default_sort` |
+| `table` | `columns` (array of `{key, label, width?, format?}`) | Supports nested dot-notation keys (e.g., `data.field.nested`). Optional: `sortable`, `filterable`, `default_sort`, `use_app_data`, `item_type_filter` |
 | `metric_cards` | `cards` (array of `{label, value_path, icon?, color?, format?}`) | `value_path` options: `data.field` (first matching record), `count:item_type`, `count:item_type:status`. Icon names are Lucide kebab-case. |
 | `feed` | `max_items` (number) | Optional: `show_agent_badge` (default true). Items render `title`, `metadata.agent` (for badge), `created_at` (relative timestamp). |
 | `alert_banner` | `message` (string), `severity` | **Config-driven — does NOT read ops_data.** Severity: `info`, `success`, `warning`, `urgent`. Optional: `subtitle`, `dismissible`, `action_label`, `action_link`. |
 | `kanban` | `columns` (array of `{id, title, color}`) | Items placed via `column_id` on ops_data. Optional: `enable_drag`, `card_fields`. |
 | `list` | -- | Optional: `show_timestamp`, `show_status_badge`, `max_items`. |
+| `chart` | `chart_type` (`bar`, `line`, `pie`, `area`) | Uses Recharts. Reads data from ops_data records. |
+| `form` | `fields` (array of field definitions) | Inserts to ops_data on submit. |
+| `calendar` | -- | Reads date-based records. |
+| `text` | -- | Renders markdown/HTML content. |
+| `countdown` | `target_date` | Countdown to a specific date/time. |
+| `embed` | `url` | Embedded iframe content. |
+| `gallery` | -- | Image/media grid from ops_data. |
+| `comparison` | -- | Side-by-side data comparisons. |
+| `progress_bar` | -- | Progress tracking visualization. |
+| `agent_card` | -- | Agent identity display card. |
+| `approval_queue` | -- | Approval workflow items. |
+| `timeline` | -- | Chronological event display. |
+
+**Creator Command Blocks (YouTube):**
+
+| Block Type | Data Source | Notes |
+|------------|-----------|-------|
+| `yt_dashboard` | `useOpsData({ appId })` | Channel KPIs (subscribers, views, videos). Uses overview record pattern. |
+| `yt_analytics` | `useOpsData({ appId })` | Deep analytics with Recharts bar/line/area charts, upload frequency, performance trends. |
+| `yt_competitors` | `useOpsData({ appId, blockId })` | Competitor cards with subscriber counts, outlier detection, "Analyze" actions. |
+| `yt_banger_lab` | `useOpsData({ appId, blockId })` | Idea cards with banger scores, validation status, feedback loop. |
+| `yt_pipeline` | `useOpsData({ appId, blockId })` | Content pipeline with status columns (Idea, Script, Film, Edit, Published). |
+| `yt_scripts` | `useOpsData({ appId, blockId })` | Script cards with word count, edit history, copy-to-clipboard. |
+| `yt_intel_feed` | `useOpsData({ appId, blockId })` | Intelligence digest feed with categorized insights. |
+| `yt_outlier_feed` | `useOpsData({ appId, blockId })` | Viral outlier videos with view multiples, thumbnail previews, detail panels. |
+
+**Meeting Intelligence Blocks:**
+
+| Block Type | Data Source | Notes |
+|------------|-----------|-------|
+| `meeting_intel` | `useOpsData({ appId })` | Full meeting dashboard: search, type/month charts (Recharts), inline expand/collapse detail panels, "Send To" dropdown for queuing to feature pipelines (Action Items, Proposals, Lead Magnets). Uses DOMPurify for HTML sanitization. 25-per-page pagination. |
+
+> **Feature block routing:** The Meeting Intelligence feature pages (Action Items, Proposals, Lead Magnets) use `block_type: "feed"` in the database but are intercepted by a `MEETING_FEATURE_BLOCK_IDS` Set in OpsBlockRenderer and routed to `OpsMeetingFeatureBlock`. This component shows status-aware cards (queued/processing/complete/error/needs_input), status filtering, "View Report" button, and retry/delete actions.
+
+**Outreach Blocks:**
+
+| Block Type | Data Source | Notes |
+|------------|-----------|-------|
+| `outreach_scoreboard` | `useOpsData({ appId })` | Outreach KPI scoreboard. |
+| `outreach_leads` | `useOpsData({ appId, blockId })` | Lead management with status tracking. |
+| `outreach_phone` | `useOpsData({ appId, blockId })` | Phone call tracking and logging. |
+| `outreach_email` | `useOpsData({ appId, blockId })` | Email outreach status and templates. |
+| `outreach_campaigns` | `useOpsData({ appId, blockId })` | Campaign management with stats. |
+| `outreach_results` | `useOpsData({ appId, blockId })` | Campaign results analytics. |
+
+**AI Employee Blocks:**
+
+| Block Type | Data Source | Notes |
+|------------|-----------|-------|
+| `employee_campaign_creator` | Writes to `ops_data` | Campaign builder with 3 personalization levels (Minimal/Average/Full Custom), lead magnet toggle, subject/body templates. |
+| `employee_lead_table` | `useOpsData({ appId })` | Lead management table with inline editing. |
+| `employee_analytics` | `useOpsData({ appId })` | Employee performance charts and metrics. |
 
 ### Data Actions
 
