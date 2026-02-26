@@ -22,13 +22,20 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Auth: accept service role Bearer token or x-api-key
+    // Auth: accept service role Bearer token, x-api-key, or x-webhook-secret
     const authHeader = req.headers.get("Authorization");
     const apiKey = req.headers.get("x-api-key");
+    const webhookSecret = req.headers.get("x-webhook-secret");
     const expectedKey = Deno.env.get("AI_TASKS_API_KEY");
+    const expectedWebhookSecret = Deno.env.get("WEBHOOK_SECRET");
     const isServiceRole = authHeader?.includes(serviceRoleKey);
     const isApiKey = apiKey && apiKey === expectedKey;
-    if (!isServiceRole && !isApiKey) {
+    const isWebhookAuth = webhookSecret && (webhookSecret === expectedWebhookSecret || webhookSecret === expectedKey);
+    // Also accept if the Bearer token ends with the service role key (pg_cron sends full key)
+    const bearerToken = authHeader?.replace("Bearer ", "");
+    const isBearerMatch = bearerToken === serviceRoleKey;
+    if (!isServiceRole && !isApiKey && !isWebhookAuth && !isBearerMatch) {
+      console.error("Auth failed. authHeader present:", !!authHeader, "serviceRoleKey length:", serviceRoleKey?.length, "bearerToken length:", bearerToken?.length);
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -85,11 +92,13 @@ Deno.serve(async (req) => {
       // Execute: call function_name or skip (no Anthropic key)
       if (automation.function_name) {
         const fnUrl = `${supabaseUrl}/functions/v1/${automation.function_name}`;
+        const webhookSecretVal = Deno.env.get("WEBHOOK_SECRET") || Deno.env.get("AI_TASKS_API_KEY") || "";
         const fnResponse = await fetch(fnUrl, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${serviceRoleKey}`,
+            "x-webhook-secret": webhookSecretVal,
           },
           body: JSON.stringify({
             automation_id,

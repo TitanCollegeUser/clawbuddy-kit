@@ -1,6 +1,6 @@
 # ClawBuddy Integration Guide v3.0.0
 
-> Last updated: February 25, 2026
+> Last updated: February 26, 2026
 > Source of truth: Audited directly from `ai-tasks/index.ts` (4,852 lines) and 15 Edge Functions.
 > Supabase project: `YOUR_PROJECT_REF`
 
@@ -916,13 +916,28 @@ Schedule and manage recurring automations.
 
 ### Delivery Channels
 
-| Channel | Notes |
-|---------|-------|
-| `dashboard` | Creates `ai_insights` record |
-| `agentmail` | Sends via AgentMail API (default inbox: `sherlockbot@agentmail.to`) |
-| `email` | Sends via Resend API |
-| `telegram` | Sends via Telegram Bot API (truncated to 4,000 chars) |
-| `discord` | Sends via Discord webhook (truncated to 2,000 chars) |
+| Channel | Config Fields | Notes |
+|---------|--------------|-------|
+| `dashboard` | `{}` | Creates `ai_insights` record |
+| `email` | `api_key`, `from_email`, `to_emails`, `subject_template` | **Recommended.** Sends via Resend API. Use a verified domain (e.g., `updates.yourdomain.com`). |
+| `agentmail` | `api_key`, `inbox_id`, `to_email` | Sends via AgentMail/SES. Lower deliverability than Resend — use `email` channel instead. |
+| `telegram` | `bot_token`, `chat_id` | Sends via Telegram Bot API (truncated to 4,000 chars) |
+| `discord` | `webhook_url` | Sends via Discord webhook (truncated to 2,000 chars) |
+
+**Channel config example (Resend):**
+```json
+{
+  "channels": [{
+    "type": "email",
+    "config": {
+      "api_key": "re_xxxx",
+      "from_email": "Agent Name <agent@updates.yourdomain.com>",
+      "to_emails": "user@gmail.com",
+      "subject_template": "🌅 Morning Digest — {{date}}"
+    }
+  }]
+}
+```
 
 **Tables:** `automations`, `automation_executions`
 
@@ -1168,12 +1183,16 @@ Storage path: `{office_id}/{task_id}/{agent_name}/{file_name}`
 
 ```
 POST {CLAWBUDDY_API_URL}/functions/v1/automation-runner
-Authorization: Bearer {SERVICE_ROLE_KEY}
+x-webhook-secret: {CLAWBUDDY_WEBHOOK_SECRET}
 ```
 
 Body: `{ "automation_id": "..." }`
 
 Orchestrates scheduled automation execution. Called by `pg_cron` or `trigger` action.
+
+**Auth:** Accepts `x-webhook-secret` header (primary), `x-api-key`, or `Authorization: Bearer {SERVICE_ROLE_KEY}`. The `pg_cron` trigger function (`sync_automation_cron`) uses `x-webhook-secret`.
+
+**Child function calls:** `automation-runner` passes both `Authorization: Bearer` and `x-webhook-secret` headers to child edge functions, ensuring compatibility with functions that only accept webhook auth (e.g., `intelligence-sync`).
 
 ### morning-digest / midday-prep / evening-report
 
@@ -1187,7 +1206,10 @@ Internal functions called by `automation-runner`. No direct auth. Return `{ html
 
 ### competitor-intel
 
-Internal function. Analyzes YouTube channels, detects outlier videos (3x+ median), flags viral alerts (5x+). Returns HTML report.
+Internal function. Reads competitor list from OpsCenter (`ops_data` with `block_id` matching the Competitors block). Falls back to hardcoded handles if no OpsCenter data found. For each competitor, fetches YouTube stats via YouTube Data API and detects outlier videos (3x+ median). Flags viral alerts (3x+ outlier score). Also fetches trending AI/automation videos via Subscribr API.
+
+**Env vars required:** `YOUTUBE_API_KEY`, `SUBSCRIBR_API_KEY`
+**OpsCenter integration:** Reads from competitors block — add/remove competitors in Creator Command dashboard and the intel report updates automatically.
 
 ### subscribr-proxy
 
@@ -1259,6 +1281,16 @@ Receives external webhook payloads, queues as `raw_reports`. If `auto_process: t
 - **`feed` items need `metadata.agent`** for agent badge rendering. Without `metadata: {"agent": "AgentName"}`, items render but show no agent badge. Always set `metadata.agent` when creating feed records.
 - **`list_data` response key differs by filter.** Without `block_id`, response uses `data` key. With `block_id`, response uses `items` key. Always check both keys when parsing responses.
 - **Block configs must be set explicitly.** Creating a block with `config: {}` and then adding data will show "No data yet" in the frontend even though records exist in the database. Set the component-specific config (see Block Type Config Reference above) BEFORE or alongside data population.
+
+### Automation & Cron Gotchas
+
+- **pg_cron auth uses `x-webhook-secret`**, NOT `Authorization: Bearer`. The `sync_automation_cron()` trigger function hardcodes the webhook secret into `net.http_post()` headers. If you change the webhook secret, you must re-toggle all automations (disable → enable) to regenerate the cron jobs.
+- **pg_cron marks jobs as "succeeded" even on HTTP 401.** The `net.http_post()` SQL call succeeds (the SQL ran), even if the HTTP response is an error. Check `automation_executions` table for actual delivery status, not `cron.job_run_details`.
+- **`automation-runner` passes `x-webhook-secret` to child functions.** This ensures child functions like `intelligence-sync` (which only accept webhook auth) work correctly. Both `Authorization: Bearer` and `x-webhook-secret` headers are sent.
+- **`competitor-intel` reads competitors from OpsCenter.** It queries `ops_data` by `block_id` for records with `data.type = "competitor"`. If no records found, falls back to hardcoded handles. Add competitors via Creator Command dashboard.
+- **Resend `email` channel is recommended over `agentmail`.** AgentMail uses Amazon SES with shared domain reputation — emails may be silently delayed or dropped. Resend with a verified custom domain has better deliverability.
+- **`channels` field is an array of objects**, not an array of strings. Each entry has `type` and `config`.
+- **Debug RPCs available:** `list_cron_jobs()` and `list_cron_job_run_details()` — call via Supabase REST RPC to inspect pg_cron state.
 
 ### Task Gotchas
 
