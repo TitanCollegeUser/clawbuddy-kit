@@ -197,11 +197,16 @@ Modules are pre-built OpsCenter apps with specialized block components. Each mod
 |--------|-------------|--------|
 | **[Meeting Intelligence](modules/meeting-intelligence.md)** | Meeting tracking, summaries, action items, proposals, lead magnets | `meeting_intel` + 3 feature blocks |
 | **[Creator Command](modules/creator-command.md)** | YouTube analytics, competitor tracking, content pipeline, outlier detection | 8 `yt_*` blocks |
+| **[AI Employees](modules/ai-employees.md)** | Sub-agent workspaces with lead database, campaign builder, analytics | 3 `employee_*` blocks |
 | **[Cognitive Memory](modules/cognitive-memory.md)** | Persistent agent knowledge base | Generic blocks |
 | **[Supercharge Claude Code](modules/supercharge-claude-code.md)** | Telegram bot, web research, automations, calendar, session management | Generic blocks |
 | **[Skill Library](modules/skill-library.md)** | Pre-built agent capabilities (23 skills, 34 operations) | Generic blocks |
 
 To create your own module, see **[Module Template](modules/MODULE-TEMPLATE.md)** for the standard format and all 37 available block types.
+
+### Lovable Prompt Template
+
+Building new block components? Use the **[Lovable Prompt Template](lovable-prompts/TEMPLATE.md)** — a one-shot prompt that gives Lovable the full design system, hook interfaces, and conventions to produce components that plug directly into clawbuddy-kit.
 
 ---
 
