@@ -77,7 +77,7 @@ BEGIN
   job_name := 'automation_' || NEW.id::TEXT;
   edge_fn_url := current_setting('app.settings.supabase_url', true);
   IF edge_fn_url IS NULL OR edge_fn_url = '' THEN
-    edge_fn_url := 'https://cgitzpughnoghwotmtjv.supabase.co';
+    edge_fn_url := 'https://YOUR_PROJECT_REF.supabase.co';
   END IF;
   edge_fn_url := edge_fn_url || '/functions/v1/automation-runner';
 
