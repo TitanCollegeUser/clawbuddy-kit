@@ -56,9 +56,11 @@ export function generateFullGuideMarkdown(config: GuideConfig): string {
      - 4.15.4 [Arena Scoreboard API](#arena-scoreboard-api)
    - 4.16 [Identity & Memory System](#identity--memory-system)
    - 4.17 [Agent Self-Identity](#agent-self-identity)
-5. [Complete Code Examples](#complete-code-examples)
-6. [Error Handling](#error-handling)
-7. [Rate Limits & Best Practices](#rate-limits--best-practices)
+5. [Direct Database Access](#direct-database-access)
+6. [Agent Onboarding](#agent-onboarding)
+7. [Complete Code Examples](#complete-code-examples)
+8. [Error Handling](#error-handling)
+9. [Rate Limits & Best Practices](#rate-limits--best-practices)
 
 ---
 
@@ -2853,6 +2855,201 @@ curl -X POST "${apiUrl}" \\
 
 ---
 
+## Direct Database Access
+
+For operations the ai-tasks edge function doesn't support (e.g., bulk reads, deletes, custom queries), use the Supabase REST API directly.
+
+### Base URL
+
+\`\`\`
+${supabaseUrl}/rest/v1
+\`\`\`
+
+### Required Headers
+
+\`\`\`
+apikey: <YOUR_SERVICE_ROLE_KEY>
+Authorization: Bearer <YOUR_SERVICE_ROLE_KEY>
+Content-Type: application/json
+\`\`\`
+
+> **Service Role Key** — Get from Supabase Dashboard → Project Settings → API → service_role key.
+> This key bypasses Row Level Security and has full database access. Never expose in client-side code.
+
+### CRUD Examples
+
+**Read (with filters & joins):**
+\`\`\`bash
+curl "${supabaseUrl}/rest/v1/tasks?select=*,subtasks(*),task_assignees(*)&order=position" \\
+  -H "apikey: <SERVICE_ROLE_KEY>" \\
+  -H "Authorization: Bearer <SERVICE_ROLE_KEY>"
+\`\`\`
+
+**Insert:**
+\`\`\`bash
+curl -X POST "${supabaseUrl}/rest/v1/ai_logs" \\
+  -H "apikey: <SERVICE_ROLE_KEY>" \\
+  -H "Authorization: Bearer <SERVICE_ROLE_KEY>" \\
+  -H "Content-Type: application/json" \\
+  -H "Prefer: return=representation" \\
+  -d '{"message": "Direct DB write", "category": "general"}'
+\`\`\`
+
+**Update:**
+\`\`\`bash
+curl -X PATCH "${supabaseUrl}/rest/v1/ai_status?agent_name=eq.Sherlock" \\
+  -H "apikey: <SERVICE_ROLE_KEY>" \\
+  -H "Authorization: Bearer <SERVICE_ROLE_KEY>" \\
+  -H "Content-Type: application/json" \\
+  -H "Prefer: return=representation" \\
+  -d '{"status_message": "Updated via REST", "ring_color": "green"}'
+\`\`\`
+
+**Delete:**
+\`\`\`bash
+curl -X DELETE "${supabaseUrl}/rest/v1/ai_status?agent_name=eq.Ghost" \\
+  -H "apikey: <SERVICE_ROLE_KEY>" \\
+  -H "Authorization: Bearer <SERVICE_ROLE_KEY>"
+\`\`\`
+
+### Python Helper
+
+\`\`\`python
+import requests
+
+SUPABASE_URL = "${supabaseUrl}"
+SERVICE_KEY = "<YOUR_SERVICE_ROLE_KEY>"
+HEADERS = {
+    "apikey": SERVICE_KEY,
+    "Authorization": f"Bearer {SERVICE_KEY}",
+    "Content-Type": "application/json",
+}
+
+def db_read(table, params=""):
+    return requests.get(f"{supabaseUrl}/rest/v1/{table}?{params}", headers=HEADERS).json()
+
+def db_insert(table, data):
+    h = {**HEADERS, "Prefer": "return=representation"}
+    return requests.post(f"{supabaseUrl}/rest/v1/{table}", json=data, headers=h).json()
+
+def db_update(table, filters, data):
+    h = {**HEADERS, "Prefer": "return=representation"}
+    return requests.patch(f"{supabaseUrl}/rest/v1/{table}?{filters}", json=data, headers=h).json()
+
+def db_delete(table, filters):
+    return requests.delete(f"{supabaseUrl}/rest/v1/{table}?{filters}", headers=HEADERS)
+\`\`\`
+
+### PostgREST Query Syntax
+
+| Operator | Example | Description |
+|----------|---------|-------------|
+| \`eq\` | \`?name=eq.Sherlock\` | Equals |
+| \`neq\` | \`?status=neq.done\` | Not equals |
+| \`gt\`/\`lt\` | \`?priority=gt.5\` | Greater/less than |
+| \`in\` | \`?status=in.(new,active)\` | In list |
+| \`like\` | \`?name=like.*sherlock*\` | Pattern match |
+| \`is\` | \`?deleted_at=is.null\` | IS NULL check |
+| \`order\` | \`?order=created_at.desc\` | Sort results |
+| \`limit\` | \`?limit=10\` | Limit rows |
+| \`select\` | \`?select=*,subtasks(*)\` | Column selection + joins |
+
+### Key Tables
+
+| Table | Description |
+|-------|-------------|
+| \`tasks\` | Kanban board tasks |
+| \`task_assignees\` | Task assignments (user_id = user, ai_agent, or sub_agent UUID) |
+| \`subtasks\` | Subtasks nested under tasks |
+| \`ai_status\` | Agent presence and ring color |
+| \`ai_agents\` | Registered AI agents |
+| \`sub_agents\` | Sub-agents / AI employees |
+| \`ai_logs\` | Agent journal entries |
+| \`ai_questions\` | Questions & approvals |
+| \`ai_insights\` | Analytics cards |
+| \`reports\` | HTML reports |
+| \`board_columns\` | Kanban columns |
+| \`users\` | Human users |
+| \`skills\` | Skill Factory configs |
+| \`ops_apps\` | OpsCenter apps |
+| \`ops_pages\` | OpsCenter pages |
+| \`ops_blocks\` | OpsCenter blocks |
+| \`ops_data\` | OpsCenter data records |
+| \`pending_tasks\` | Async task queue |
+| \`automations\` | Scheduled automations |
+| \`offices\` | Animated office spaces |
+| \`office_agents\` | Characters in offices |
+
+---
+
+## Agent Onboarding
+
+Follow these steps every time you onboard a new AI agent, AI employee, or sub-agent.
+
+### Step 1: Register Identity (REQUIRED)
+
+\`\`\`bash
+curl -X POST "${apiUrl}" \\
+  -H "Content-Type: application/json" \\
+  -H "x-webhook-secret: ${webhookSecret}" \\
+  -d '{
+    "request_type": "agent",
+    "action": "create",
+    "name": "<AGENT_NAME>",
+    "emoji": "<EMOJI>",
+    "description": "What this agent does",
+    "model": "claude-sonnet-4-20250514"
+  }'
+\`\`\`
+
+### Step 2: Link Status Record (REQUIRED)
+
+Update the ai_status row with both \`agent_name\` AND \`agent_id\` (from step 1):
+
+\`\`\`bash
+curl -X PATCH "${supabaseUrl}/rest/v1/ai_status?agent_name=eq.<AGENT_NAME>" \\
+  -H "apikey: <SERVICE_ROLE_KEY>" \\
+  -H "Authorization: Bearer <SERVICE_ROLE_KEY>" \\
+  -H "Content-Type: application/json" \\
+  -H "Prefer: return=representation" \\
+  -d '{"agent_id": "<AGENT_ID>", "agent_name": "<AGENT_NAME>", "agent_emoji": "<EMOJI>"}'
+\`\`\`
+
+### Step 3: Add to Animated Office (Optional)
+
+\`\`\`bash
+curl -X POST "${supabaseUrl}/functions/v1/manage-office-agent" \\
+  -H "Content-Type: application/json" \\
+  -H "x-webhook-secret: ${webhookSecret}" \\
+  -d '{"action": "create", "name": "<AGENT_NAME>", "role": "Agent role", "status": "idle"}'
+\`\`\`
+
+### Step 4: Share Onboarding Prompt (REQUIRED)
+
+Copy the onboarding prompt from the Settings → Onboarding tab and share it with the agent. The prompt includes:
+- Connection credentials (API URL, webhook secret)
+- Core workflow (create → assign → do → log → done)
+- **CRITICAL** assignee rules (EVERY task must have an assignee)
+- Status update patterns (agent_name + agent_emoji required)
+- Direct database access patterns
+- Logging and question/approval rules
+
+### LESSONS LEARNED: Assignee System
+
+The assignee lookup searches **three tables** in order:
+1. \`users\` table (by \`name\`)
+2. \`ai_agents\` table (by \`name\`)
+3. \`sub_agents\` table (by \`display_name\`)
+
+**Rules:**
+- EVERY task MUST have an assignee. No exceptions.
+- Agent creates task for itself → assign its own name
+- Agent creates task for a human → assign the human's name
+- Agent creates task for a sub-agent → assign the sub-agent's display_name
+- Unassigned tasks appear broken on the Kanban board
+
+---
+
 *Generated for ${aiName} • ClawBuddy Integration Guide V1*
 `;
 }
@@ -2905,20 +3102,32 @@ export function generateGuideSections(config: GuideConfig): GuideSection[] {
       ]
     },
     {
+      id: 'direct-db',
+      title: '5. Direct Database Access',
+      icon: 'Database',
+      content: `Bypass the edge function and talk directly to Supabase via REST API. Includes CRUD examples, Python helper, PostgREST query syntax, and key tables reference.`
+    },
+    {
+      id: 'agent-onboarding',
+      title: '6. Agent Onboarding',
+      icon: 'UserPlus',
+      content: `Step-by-step guide for registering new agents: create identity, link status record, add to office, and share the onboarding prompt. Includes LESSONS LEARNED on the assignee system.`
+    },
+    {
       id: 'code-examples',
-      title: '5. Complete Code Examples',
+      title: '7. Complete Code Examples',
       icon: 'Code',
       content: `Full Python and JavaScript SDK implementations.`
     },
     {
       id: 'error-handling',
-      title: '6. Error Handling',
+      title: '8. Error Handling',
       icon: 'AlertTriangle',
       content: `Common errors and how to handle them.`
     },
     {
       id: 'best-practices',
-      title: '7. Rate Limits & Best Practices',
+      title: '9. Rate Limits & Best Practices',
       icon: 'Shield',
       content: `Rate limits, polling intervals, and recommendations.`
     }

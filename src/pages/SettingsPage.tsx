@@ -8,6 +8,8 @@ import { Separator } from '@/components/ui/separator';
 import { useAiSettings } from '@/contexts/AiSettingsContext';
 import { RayStatusBadge } from '@/components/dashboard/RayStatusBadge';
 import { IntegrationGuide } from '@/components/settings/IntegrationGuide';
+import { DirectDatabaseAccess } from '@/components/settings/DirectDatabaseAccess';
+import { AgentOnboardingGuide } from '@/components/settings/AgentOnboardingGuide';
 import { toast } from 'sonner';
 import { EdgeFunctionVisualizer } from '@/components/settings/EdgeFunctionVisualizer';
 import { AgentCard } from '@/components/settings/AgentCard';
@@ -30,6 +32,8 @@ import {
   Zap,
   Bot,
   Plus,
+  Database,
+  UserPlus,
 } from 'lucide-react';
 
 export const SettingsPage = () => {
@@ -116,6 +120,14 @@ export const SettingsPage = () => {
           <TabsTrigger value="agents" className="gap-2">
             <Bot className="h-4 w-4" />
             Agents
+          </TabsTrigger>
+          <TabsTrigger value="database" className="gap-2">
+            <Database className="h-4 w-4" />
+            Database
+          </TabsTrigger>
+          <TabsTrigger value="onboarding" className="gap-2">
+            <UserPlus className="h-4 w-4" />
+            Onboarding
           </TabsTrigger>
           <TabsTrigger value="edge-functions" className="gap-2">
             <Zap className="h-4 w-4" />
@@ -372,6 +384,23 @@ export const SettingsPage = () => {
               isLoading={createAgent.isPending}
             />
           </motion.div>
+        </TabsContent>
+
+        {/* Direct Database Access */}
+        <TabsContent value="database" className="space-y-6">
+          <DirectDatabaseAccess
+            supabaseUrl={supabaseUrl}
+            anonKey={anonKey || 'your-anon-key'}
+          />
+        </TabsContent>
+
+        {/* Agent Onboarding */}
+        <TabsContent value="onboarding" className="space-y-6">
+          <AgentOnboardingGuide
+            apiUrl={aiTasksUrl}
+            webhookSecret={settings.webhookSecret}
+            supabaseUrl={supabaseUrl}
+          />
         </TabsContent>
 
         {/* Edge Functions */}
