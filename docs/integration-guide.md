@@ -279,6 +279,12 @@ Optional: `due_date`, `assigned_to`
 
 **`request_type: "assignee"`**
 
+The assignee system supports **three entity types** — users, AI agents, and sub-agents. The `assign` action searches all three tables automatically:
+
+1. **`users`** — Human users (e.g., `"Mani Kanasani"`)
+2. **`ai_agents`** — Registered AI agents (e.g., `"Sherlock"`, `"OpenClaw"`)
+3. **`sub_agents`** — Sub-agents matched by `display_name` (e.g., `"Research Bot"`)
+
 ### assign
 
 ```json
@@ -286,19 +292,19 @@ Optional: `due_date`, `assigned_to`
   "request_type": "assignee",
   "action": "assign",
   "task_id": "...",
-  "names": ["Your Name"]
+  "names": ["Sherlock", "Mani Kanasani"]
 }
 ```
 
-`names` can be a string or string array. Looks up users by name in `user_profiles`.
+`names` can be a string or string array. Searches `users` → `ai_agents` → `sub_agents` (by `display_name`) in that order.
 
-> **Agent Assignment:** The `assign` action only matches names in the `user_profiles` view (auth users). To assign tasks to AI agents or sub-agents, insert directly into `task_assignees` via REST API using the agent's `ai_agents.id` or `sub_agents.id` as `user_id`. The frontend `useAssignableEntities` hook already resolves all entity types (users, ai_agents, sub_agents) in its entityMap — no frontend changes needed.
->
-> **Required DB setup (one-time):** Drop the FK constraint on `task_assignees`:
-> ```sql
-> ALTER TABLE task_assignees DROP CONSTRAINT task_assignees_user_id_fkey;
-> ```
-> This allows any UUID (not just auth user IDs) to be stored as an assignee. Note: `user_profiles` is a VIEW, not a table — no FK changes needed there.
+> **Who should be assigned?** Every task on the Kanban board should have an assignee so cards don't appear abandoned. Follow these rules:
+> - **AI agents creating tasks for themselves:** Include your own agent name (e.g., `"names": ["Sherlock"]`)
+> - **AI agents creating tasks for the user:** Include the user's name (e.g., `"names": ["Mani Kanasani"]`)
+> - **AI agents creating tasks for a sub-agent:** Include the sub-agent's display name (e.g., `"names": ["Research Bot"]`)
+> - **Multiple assignees:** You can assign both yourself and others in one call (e.g., `"names": ["Sherlock", "Mani Kanasani"]`)
+
+> **How names appear on Kanban cards:** The frontend resolves names via `useAssignableEntities`, which merges all three tables. AI agents display with their emoji (from `ai_status.agent_emoji`). Sub-agents display with a bot icon. Cards show first names only with a max of 2 visible.
 
 ### unassign
 
@@ -307,7 +313,7 @@ Optional: `due_date`, `assigned_to`
   "request_type": "assignee",
   "action": "unassign",
   "task_id": "...",
-  "names": ["Your Name"]
+  "names": ["Sherlock"]
 }
 ```
 
@@ -318,6 +324,8 @@ Optional: `due_date`, `assigned_to`
 ```
 
 **Table:** `task_assignees`
+
+> **Note:** The `task_assignees.user_id` column stores UUIDs from any of the three entity tables (users, ai_agents, sub_agents). There is no FK constraint — any valid UUID is accepted.
 
 ---
 
@@ -607,9 +615,21 @@ Receive and process external webhook payloads.
 
 ## 11. Sub-Agents
 
-Create and manage specialized AI workers.
+Create and manage specialized AI workers. Sub-agents appear as assignable entities on the Kanban board and in the animated office.
 
 **`request_type: "subagent"`**
+
+> **Onboarding pattern:** When provisioning a new AI Employee, sub-agent, or any specialized worker, you must create their identity so they can be assigned to tasks on the Kanban board. This is similar to provisioning an office — the agent needs to exist in the system before it can own work.
+>
+> **For AI Agents** (first-class agents like Sherlock, OpenClaw): Register via `request_type: "ai_agent"` — they're automatically assignable by name.
+>
+> **For Sub-Agents** (specialized workers, AI Employees): Register via `request_type: "subagent", action: "create"` — they're assignable by their `display_name`.
+>
+> **Provisioning checklist for a new agent/employee:**
+> 1. **Create identity** — `subagent.create` (or `ai_agent` for first-class agents)
+> 2. **Add to office** — `manage-office-agent` with `action: "create"` (animated character)
+> 3. **Assign to tasks** — Use their name in `assignee.assign` calls
+> 4. **Update status** — Use `office-agent-status` to show what they're working on
 
 ### create
 
@@ -1033,7 +1053,7 @@ Configure and track competitive scoring between office agents.
 
 ## 20. AI Agents (Multi-Agent)
 
-Manage agent identities for multi-agent setups.
+Manage agent identities for multi-agent setups. AI agents registered here are automatically assignable to Kanban tasks by name.
 
 **`request_type: "ai_agent"` (or `"agent"`)**
 
@@ -1044,6 +1064,17 @@ Manage agent identities for multi-agent setups.
 | `list` | -- | All agents for the user |
 
 **Table:** `ai_agents`
+
+> **Assignee integration:** Once an AI agent is registered in `ai_agents`, its `name` can be used directly in `assignee.assign` calls. The agent's emoji (from `ai_status.agent_emoji`) will display on Kanban cards next to the name.
+>
+> **Onboarding a new AI agent:**
+> 1. Create a webhook secret for the agent in Settings
+> 2. Register the agent — it gets an entry in `ai_agents`
+> 3. Link its `ai_status` record: `UPDATE ai_status SET agent_id = '<ai_agents.id>' WHERE agent_name = '<name>';`
+> 4. Set `agent_emoji` in `ai_status` so the Kanban card shows the right icon
+> 5. The agent can now assign itself to tasks: `"names": ["AgentName"]`
+>
+> **AI Employees** (like Jason the SDR) follow the same pattern — register as a sub-agent via `subagent.create` so they appear as assignable entities, then provision their office character.
 
 ---
 

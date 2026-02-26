@@ -564,22 +564,53 @@ async function updateBujjiLastSeen(
   }
 }
 
-// Helper to lookup user IDs from names
+// Helper to lookup entity IDs from names (searches users, ai_agents, sub_agents)
 async function lookupUsersByNames(
   // deno-lint-ignore no-explicit-any
   supabase: any,
   names: string[]
 ): Promise<{ id: string; name: string }[]> {
-  const { data, error } = await supabase
+  const trimmed = names.map(n => n.trim());
+  const results: { id: string; name: string }[] = [];
+  const foundNames = new Set<string>();
+
+  // 1. Search users table
+  const { data: users, error: userErr } = await supabase
     .from("users")
     .select("id, name")
-    .in("name", names.map(n => n.trim()));
-  
-  if (error) {
-    console.error("Error looking up users:", error);
-    return [];
+    .in("name", trimmed);
+  if (!userErr && users) {
+    for (const u of users) { results.push(u); foundNames.add(u.name); }
   }
-  return data || [];
+
+  // 2. Search ai_agents table for any remaining names
+  const remaining = trimmed.filter(n => !foundNames.has(n));
+  if (remaining.length > 0) {
+    const { data: agents, error: agentErr } = await supabase
+      .from("ai_agents")
+      .select("id, name")
+      .in("name", remaining);
+    if (!agentErr && agents) {
+      for (const a of agents) { results.push(a); foundNames.add(a.name); }
+    }
+  }
+
+  // 3. Search sub_agents table for any still remaining
+  const stillRemaining = trimmed.filter(n => !foundNames.has(n));
+  if (stillRemaining.length > 0) {
+    const { data: subs, error: subErr } = await supabase
+      .from("sub_agents")
+      .select("id, display_name")
+      .in("display_name", stillRemaining);
+    if (!subErr && subs) {
+      for (const s of subs) { results.push({ id: s.id, name: s.display_name }); }
+    }
+  }
+
+  if (results.length === 0) {
+    console.error("No entities found with names:", trimmed);
+  }
+  return results;
 }
 
 Deno.serve(async (req) => {
@@ -2389,7 +2420,7 @@ Waiting for user to fix and resubmit.`;
         const { data, error } = await supabase
           .from("task_assignees")
           .upsert(assignments, { onConflict: 'task_id,user_id', ignoreDuplicates: true })
-          .select("*, user:users(id, name)");
+          .select("*");
 
         if (error) {
           console.error("Error assigning users:", error);
@@ -2473,7 +2504,7 @@ Waiting for user to fix and resubmit.`;
 
         const { data, error } = await supabase
           .from("task_assignees")
-          .select("*, user:users(id, name, email)")
+          .select("*")
           .eq("task_id", task_id);
 
         if (error) {
@@ -3280,7 +3311,7 @@ Waiting for user to fix and resubmit.`;
             subtasks(*),
             board_column:board_columns(id, name, color),
             task_budgets(*),
-            task_assignees(*, user:users(id, name, email))
+            task_assignees(*)
           `)
           .order("created_at", { ascending: false });
 
@@ -3324,7 +3355,7 @@ Waiting for user to fix and resubmit.`;
             subtasks(*),
             board_column:board_columns(id, name, color),
             task_budgets(*),
-            task_assignees(*, user:users(id, name, email))
+            task_assignees(*)
           `)
           .eq("id", id)
           .single();
@@ -3616,7 +3647,7 @@ Waiting for user to fix and resubmit.`;
           subtasks(*),
           board_column:board_columns(id, name, color),
           task_budgets(*),
-          task_assignees(*, user:users(id, name, email))
+          task_assignees(*)
         `)
         .order("created_at", { ascending: false });
 
@@ -4916,6 +4947,300 @@ Waiting for user to fix and resubmit.`;
       }
 
       return learnRes({ error: `Unknown learning action: ${action}` }, 400);
+    }
+
+    // ============ AI EMPLOYEES — HR Layer for AI Staffing Agency ============
+    if (requestType === "employee") {
+      const action = body.action as string;
+      console.log(`Handling employee action: ${action}`);
+      const empRes = (data: unknown, status = 200) =>
+        new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+      if (!userId) return empRes({ error: "User ID required" }, 400);
+      if (!action) return empRes({ error: "Missing action" }, 400);
+
+      // ---- HIRE (CREATE) — Auto-provisions OpsCenter app ----
+      if (action === "create" || action === "hire") {
+        if (!body.name || !body.role) return empRes({ error: "name and role are required" }, 400);
+
+        const employeeName = body.name as string;
+        const appName = `emp-${employeeName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}`;
+
+        // 1. Create OpsCenter app for this employee
+        let opsAppId: string | null = null;
+        try {
+          const { data: opsApp, error: opsErr } = await supabase.from("ops_apps").insert({
+            name: appName,
+            title: `${employeeName} Dashboard`,
+            description: `Performance dashboard for ${employeeName} — ${body.role}`,
+            icon: (body.ops_icon as string) || "briefcase",
+            status: "active",
+            agent_name: employeeName,
+            theme: body.theme || { accent: "#3b82f6", style: "default" },
+            config: { employee: true, platform: (body.platform as string) || "claude_code" },
+            user_id: userId,
+          }).select().single();
+
+          if (opsErr) {
+            console.error("Failed to create OpsCenter app for employee:", opsErr.message);
+          } else {
+            opsAppId = opsApp.id;
+
+            // Create default dashboard page with starter blocks
+            const { data: page } = await supabase.from("ops_pages").insert({
+              app_id: opsAppId,
+              name: "dashboard",
+              title: "Dashboard",
+              icon: "layout-dashboard",
+              sort_order: 0,
+              layout: "stack",
+              config: {},
+            }).select().single();
+
+            if (page) {
+              // Add metric cards block
+              await supabase.from("ops_blocks").insert([
+                {
+                  page_id: page.id,
+                  block_type: "metric_cards",
+                  title: "Performance Metrics",
+                  sort_order: 0,
+                  config: {
+                    cards: [
+                      { label: "Tasks Completed", value_path: "data.tasks_completed", format: "number", icon: "check-circle" },
+                      { label: "Success Rate", value_path: "data.success_rate", format: "percent", icon: "trending-up" },
+                      { label: "Revenue Generated", value_path: "data.revenue_generated", format: "number", icon: "dollar-sign" },
+                      { label: "Total Cost", value_path: "data.total_cost", format: "number", icon: "credit-card" },
+                    ],
+                  },
+                },
+                {
+                  page_id: page.id,
+                  block_type: "feed",
+                  title: "Activity Feed",
+                  sort_order: 1,
+                  config: { show_timestamps: true, max_items: 50 },
+                },
+                {
+                  page_id: page.id,
+                  block_type: "table",
+                  title: "Work Log",
+                  sort_order: 2,
+                  config: {
+                    columns: [
+                      { key: "title", label: "Task" },
+                      { key: "data.work_type", label: "Type" },
+                      { key: "data.outcome", label: "Outcome" },
+                      { key: "data.duration", label: "Duration" },
+                      { key: "created_at", label: "Date", format: "date" },
+                    ],
+                  },
+                },
+              ]);
+            }
+
+            // Update app page_order
+            if (page) {
+              await supabase.from("ops_apps").update({ page_order: ["dashboard"] }).eq("id", opsAppId);
+            }
+          }
+        } catch (e) {
+          console.error("OpsCenter provisioning error:", e);
+        }
+
+        // 2. Create the employee record
+        const { data: employee, error } = await supabase.from("ai_employees").insert({
+          user_id: userId,
+          name: employeeName,
+          role: body.role as string,
+          emoji: (body.emoji as string) || "🤖",
+          description: (body.description as string) || null,
+          platform: (body.platform as string) || "claude_code",
+          platform_label: (body.platform_label as string) || null,
+          department: (body.department as string) || "general",
+          status: (body.status as string) || "idle",
+          skill_names: (body.skill_names as string[]) || [],
+          config: body.config || {},
+          metrics: body.metrics || {},
+          ops_app_id: opsAppId,
+        }).select().single();
+
+        if (error) return empRes({ error: error.message }, 500);
+
+        // 3. Log the hiring
+        await supabase.from("ai_log").insert({
+          user_id: userId,
+          message: `🤝 New AI Employee hired: ${employeeName} (${body.role}) — Platform: ${(body.platform as string) || "claude_code"}`,
+          category: "observation",
+          agent_name: logAgentName,
+          agent_emoji: logAgentEmoji,
+        });
+
+        console.log(`Employee created: ${employee.id}, OpsCenter app: ${opsAppId}`);
+        return empRes({ employee, ops_app_id: opsAppId, success: true }, 201);
+      }
+
+      // ---- LIST — Get all employees ----
+      if (action === "list") {
+        let q = supabase.from("ai_employees").select("*")
+          .eq("user_id", userId).order("hired_at", { ascending: true });
+        if (body.status) q = q.eq("status", body.status as string);
+        if (body.department) q = q.eq("department", body.department as string);
+        if (body.platform) q = q.eq("platform", body.platform as string);
+        if (body.limit) q = q.limit(body.limit as number);
+        const { data, error } = await q;
+        if (error) return empRes({ error: error.message }, 500);
+        return empRes({ employees: data, count: data?.length ?? 0 });
+      }
+
+      // ---- GET — Single employee with work log ----
+      if (action === "get") {
+        if (!body.employee_id) return empRes({ error: "employee_id is required" }, 400);
+        const { data: employee, error } = await supabase.from("ai_employees").select("*")
+          .eq("id", body.employee_id as string).eq("user_id", userId).single();
+        if (error) return empRes({ error: error.message }, 404);
+
+        // Get recent work log
+        const logLimit = (body.log_limit as number) || 20;
+        const { data: workLog } = await supabase.from("ai_employee_work_log").select("*")
+          .eq("employee_id", body.employee_id as string)
+          .order("created_at", { ascending: false }).limit(logLimit);
+
+        return empRes({ employee, work_log: workLog || [] });
+      }
+
+      // ---- UPDATE — Modify employee details ----
+      if (action === "update") {
+        if (!body.employee_id) return empRes({ error: "employee_id is required" }, 400);
+        const updates: Record<string, unknown> = {};
+        for (const k of ["name", "role", "emoji", "description", "platform", "platform_label", "department", "status", "current_task", "current_task_started_at", "skill_names", "config", "metrics"]) {
+          if (body[k] !== undefined) updates[k] = body[k];
+        }
+        const { data, error } = await supabase.from("ai_employees").update(updates)
+          .eq("id", body.employee_id as string).eq("user_id", userId).select().single();
+        if (error) return empRes({ error: error.message }, 500);
+        return empRes({ employee: data });
+      }
+
+      // ---- UPDATE STATUS — Quick status change (for agents reporting in) ----
+      if (action === "update_status") {
+        if (!body.employee_id) return empRes({ error: "employee_id is required" }, 400);
+        const updates: Record<string, unknown> = { last_active: new Date().toISOString() };
+        if (body.status) updates.status = body.status;
+        if (body.current_task !== undefined) updates.current_task = body.current_task;
+        if (body.current_task) updates.current_task_started_at = new Date().toISOString();
+        if (body.current_task === null) updates.current_task_started_at = null;
+        if (body.metrics) {
+          // Merge metrics instead of replacing
+          const { data: existing } = await supabase.from("ai_employees").select("metrics")
+            .eq("id", body.employee_id as string).single();
+          updates.metrics = { ...(existing?.metrics || {}), ...(body.metrics as Record<string, unknown>) };
+        }
+        const { data, error } = await supabase.from("ai_employees").update(updates)
+          .eq("id", body.employee_id as string).eq("user_id", userId).select().single();
+        if (error) return empRes({ error: error.message }, 500);
+        return empRes({ employee: data });
+      }
+
+      // ---- LOG WORK — Record a work item ----
+      if (action === "log_work") {
+        if (!body.employee_id || !body.title) return empRes({ error: "employee_id and title are required" }, 400);
+        const { data: workItem, error } = await supabase.from("ai_employee_work_log").insert({
+          employee_id: body.employee_id as string,
+          user_id: userId,
+          work_type: (body.work_type as string) || "task",
+          title: body.title as string,
+          description: (body.description as string) || null,
+          data: body.data || {},
+          outcome: (body.outcome as string) || null,
+          duration_seconds: (body.duration_seconds as number) || null,
+        }).select().single();
+        if (error) return empRes({ error: error.message }, 500);
+
+        // Also push to OpsCenter feed if employee has an ops_app
+        const { data: emp } = await supabase.from("ai_employees").select("ops_app_id, name")
+          .eq("id", body.employee_id as string).single();
+        if (emp?.ops_app_id) {
+          // Find the feed block
+          const { data: pages } = await supabase.from("ops_pages").select("id")
+            .eq("app_id", emp.ops_app_id);
+          if (pages && pages.length > 0) {
+            const { data: feedBlock } = await supabase.from("ops_blocks").select("id")
+              .eq("page_id", pages[0].id).eq("block_type", "feed").limit(1).single();
+            if (feedBlock) {
+              await supabase.from("ops_data").insert({
+                app_id: emp.ops_app_id,
+                block_id: feedBlock.id,
+                item_type: "work_log",
+                title: body.title as string,
+                description: (body.description as string) || null,
+                status: (body.outcome as string) || "completed",
+                data: { work_type: (body.work_type as string) || "task", outcome: body.outcome || null, duration_seconds: body.duration_seconds || null, ...(body.data as Record<string, unknown> || {}) },
+                metadata: { agent: emp.name },
+                user_id: userId,
+              });
+            }
+          }
+        }
+
+        return empRes({ work_item: workItem, success: true }, 201);
+      }
+
+      // ---- GET DASHBOARD — Get employee + OpsCenter app data ----
+      if (action === "get_dashboard") {
+        if (!body.employee_id) return empRes({ error: "employee_id is required" }, 400);
+        const { data: employee, error } = await supabase.from("ai_employees").select("*")
+          .eq("id", body.employee_id as string).eq("user_id", userId).single();
+        if (error) return empRes({ error: error.message }, 404);
+
+        let dashboard = null;
+        if (employee.ops_app_id) {
+          const { data: app } = await supabase.from("ops_apps").select("*").eq("id", employee.ops_app_id).single();
+          const { data: pages } = await supabase.from("ops_pages").select("*, ops_blocks(*)").eq("app_id", employee.ops_app_id).order("sort_order");
+          dashboard = { app, pages: pages || [] };
+        }
+
+        // Recent work log
+        const { data: workLog } = await supabase.from("ai_employee_work_log").select("*")
+          .eq("employee_id", body.employee_id as string)
+          .order("created_at", { ascending: false }).limit(50);
+
+        return empRes({ employee, dashboard, work_log: workLog || [] });
+      }
+
+      // ---- DELETE (TERMINATE) — Remove employee ----
+      if (action === "delete" || action === "terminate") {
+        if (!body.employee_id) return empRes({ error: "employee_id is required" }, 400);
+
+        // Get employee to find ops_app_id for cleanup
+        const { data: emp } = await supabase.from("ai_employees").select("name, ops_app_id")
+          .eq("id", body.employee_id as string).eq("user_id", userId).single();
+
+        // Delete the employee (cascades to work_log)
+        const { error } = await supabase.from("ai_employees").delete()
+          .eq("id", body.employee_id as string).eq("user_id", userId);
+        if (error) return empRes({ error: error.message }, 500);
+
+        // Optionally clean up OpsCenter app
+        if (emp?.ops_app_id && body.cleanup_ops !== false) {
+          await supabase.from("ops_apps").delete().eq("id", emp.ops_app_id).eq("user_id", userId);
+        }
+
+        // Log the termination
+        if (emp) {
+          await supabase.from("ai_log").insert({
+            user_id: userId,
+            message: `👋 AI Employee terminated: ${emp.name}`,
+            category: "observation",
+            agent_name: logAgentName,
+            agent_emoji: logAgentEmoji,
+          });
+        }
+
+        return empRes({ success: true, employee_id: body.employee_id });
+      }
+
+      return empRes({ error: `Unknown employee action: ${action}` }, 400);
     }
 
     return new Response(
