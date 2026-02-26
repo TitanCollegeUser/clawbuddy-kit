@@ -1,8 +1,8 @@
-import { LayoutDashboard, Kanban, MessageCircleQuestion, ScrollText, ChevronLeft, ChevronRight, Puzzle, Target, Brain, Bot, FileText, Settings, Building2, FlaskConical, Radar, CalendarClock } from 'lucide-react';
+import { LayoutDashboard, Kanban, MessageCircleQuestion, ScrollText, ChevronLeft, ChevronRight, Puzzle, Target, Brain, Users, FileText, Settings, Building2, FlaskConical, Radar, CalendarClock } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { usePendingQuestionsCount } from '@/hooks/useAiQuestions';
 import { useUnreadLogCount } from '@/hooks/useAiLog';
-import { useRunningAgentsCount } from '@/hooks/useSubAgents';
+
 import { useUnreadReportsCount } from '@/hooks/useReports';
 import { useFailedAutomationsCount } from '@/hooks/useAutomations';
 import { useAiSettings } from '@/contexts/AiSettingsContext';
@@ -23,7 +23,7 @@ const navItems = [
   { title: 'AI Log', url: '/log', icon: ScrollText, showLogBadge: true },
   { title: 'Questions', url: '/questions', icon: MessageCircleQuestion, showBadge: true },
   { title: 'Skill Factory', url: '/skills/factory', icon: FlaskConical },
-  { title: 'Sub-Agents', url: '/sub-agents', icon: Bot, showAgentBadge: true },
+  { title: 'Agent Teams', url: '/agent-teams', icon: Users },
   { title: 'Workspace', url: '/workspace', icon: Building2 },
   { title: 'Reports', url: '/reports', icon: FileText, showReportBadge: true },
   { title: 'Settings', url: '/settings', icon: Settings },
@@ -33,7 +33,7 @@ export const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
   const { data: pendingCount = 0 } = usePendingQuestionsCount();
   const { data: unreadLogCount = 0 } = useUnreadLogCount();
-  const { data: runningAgentsCount = 0 } = useRunningAgentsCount();
+
   const { data: unreadReportsCount = 0 } = useUnreadReportsCount();
   const { data: failedAutomationsCount = 0 } = useFailedAutomationsCount();
   const { settings } = useAiSettings();
@@ -116,15 +116,6 @@ export const Sidebar = () => {
                   className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-amber-500 text-[10px] font-bold flex items-center justify-center text-white shadow-lg"
                 >
                   {unreadLogCount > 9 ? '9+' : unreadLogCount}
-                </motion.span>
-              )}
-              {item.showAgentBadge && runningAgentsCount > 0 && (
-                <motion.span 
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-primary text-[10px] font-bold flex items-center justify-center text-primary-foreground shadow-[0_0_8px_hsl(var(--primary)/0.6)]"
-                >
-                  {runningAgentsCount > 9 ? '9+' : runningAgentsCount}
                 </motion.span>
               )}
               {item.showReportBadge && unreadReportsCount > 0 && (

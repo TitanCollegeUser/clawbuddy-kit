@@ -20,8 +20,7 @@ import { SkillFactoryPage } from "@/pages/SkillFactoryPage";
 import { GoalsLabPage } from "@/pages/GoalsLabPage";
 import { IdentityPage } from "@/pages/IdentityPage";
 import { AgentIdentityPage } from "@/pages/AgentIdentityPage";
-import { SubAgentsPage } from "@/pages/SubAgentsPage";
-import { SubAgentDetailPage } from "@/pages/SubAgentDetailPage";
+import { AgentTeamsPage } from "@/pages/AgentTeamsPage";
 import { ReportsPage } from "@/pages/ReportsPage";
 import { OnboardingPage } from "@/pages/OnboardingPage";
 import { SettingsPage } from "@/pages/SettingsPage";
@@ -76,8 +75,7 @@ const App = () => (
                 <Route path="/skills/factory" element={<SkillFactoryPage2 />} />
                 <Route path="/skills/factory/new" element={<ClaudeCodeSkillEditor />} />
                 <Route path="/skills/factory/:id" element={<SkillDetailPage />} />
-                <Route path="/sub-agents" element={<SubAgentsPage />} />
-                <Route path="/sub-agents/:id" element={<SubAgentDetailPage />} />
+                <Route path="/agent-teams" element={<AgentTeamsPage />} />
                 <Route path="/reports" element={<ReportsPage />} />
                 <Route path="/workspace" element={<WorkspacePage />} />
                 <Route path="/workspace/office/:id" element={<OfficePage />} />
