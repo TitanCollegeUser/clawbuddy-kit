@@ -50,6 +50,12 @@ FUNCTIONS=(
   office-agent-status
   reset-office
   upload-office-deliverable
+  activate-license
+  millis-proxy
+  lexa-webhook
+  lexa-precall
+  lexa-campaign-runner
+  make-proxy
 )
 
 for fn in "${FUNCTIONS[@]}"; do

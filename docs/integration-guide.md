@@ -1,13 +1,17 @@
-# ClawBuddy Integration Guide v3.0.0
+# ClawBuddy Deployment & Integration Guide v3.1.0
 
 > Last updated: February 27, 2026
-> Source of truth: Audited directly from `ai-tasks/index.ts` (4,852 lines) and 20 Edge Functions.
+> Source of truth: Audited directly from `ai-tasks/index.ts` (4,852 lines), 24 Edge Functions, and 65 migrations.
 > Supabase project: `YOUR_PROJECT_REF`
 
 ---
 
 ## Table of Contents
 
+**Deployment**
+1. [Deployment](#deployment)
+
+**Integration (API Reference)**
 1. [Connection & Authentication](#connection--authentication)
 2. [Status](#1-status)
 3. [Tasks (Kanban)](#2-tasks-kanban)
@@ -33,6 +37,132 @@
 23. [Standalone Edge Functions](#standalone-edge-functions)
 24. [Known Quirks & Gotchas](#known-quirks--gotchas)
 25. [Database Tables Reference](#database-tables-reference)
+
+---
+
+## Deployment
+
+### Prerequisites
+
+- **Supabase account** — Free tier works. Create at [supabase.com](https://supabase.com).
+- **Netlify account** — Free tier works. Create at [netlify.com](https://netlify.com).
+- **GitHub account** — To fork the repo.
+- **Supabase CLI** — `npm install -g supabase`
+- **Node.js 18+** — For building the frontend.
+
+### Step 1: Fork & Clone
+
+```bash
+# Fork https://github.com/mkanasani/clawbuddy-kit on GitHub, then:
+git clone https://github.com/YOUR_USERNAME/clawbuddy-kit.git
+cd clawbuddy-kit
+```
+
+### Step 2: Backend Setup (Supabase)
+
+Create a new Supabase project, then deploy the full backend:
+
+```bash
+# Link to your Supabase project
+supabase link --project-ref YOUR_PROJECT_REF
+
+# Apply all 65 database migrations (creates the full schema)
+supabase db push
+
+# Generate and set secrets
+supabase secrets set CLAWBUDDY_WEBHOOK_SECRET=$(openssl rand -hex 32)
+supabase secrets set AI_TASKS_API_KEY=$(openssl rand -hex 32)
+
+# Deploy all 24 edge functions
+for fn in \
+  ai-tasks automation-runner sherlock-brain \
+  morning-digest evening-report midday-prep competitor-intel \
+  intelligence-sync browser-research calendar-sync \
+  goal-analyzer report-webhook \
+  list-offices manage-office-agent create-office-task \
+  office-agent-status reset-office upload-office-deliverable \
+  activate-license millis-proxy \
+  lexa-webhook lexa-precall lexa-campaign-runner \
+  make-proxy; do
+  supabase functions deploy "$fn" --no-verify-jwt
+done
+```
+
+**Optional secrets** (for specific features):
+
+| Secret | Required For |
+|--------|-------------|
+| `YOUTUBE_API_KEY` | Competitor Intel automation |
+| `SUBSCRIBR_API_KEY` | Outlier video detection |
+| `RESEND_API_KEY` | Email delivery (automations) |
+| `MILLIS_API_KEY` | Lexa AI Phone Employee |
+| `FATHOM_WEBHOOK_SECRET` | Fathom meeting webhooks |
+| `GEMINI_API_KEY` | Goal Analyzer (Gemini 2.5 Pro) |
+
+### Step 3: Frontend Setup (Netlify)
+
+**Option A: One-click deploy**
+
+Click the **Deploy to Netlify** button in the README. Set these env vars in Netlify (Site Settings > Environment Variables):
+
+| Variable | Value |
+|----------|-------|
+| `VITE_SUPABASE_URL` | `https://YOUR_PROJECT_REF.supabase.co` |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Your Supabase anon key (from Project Settings > API) |
+| `VITE_CLAWBUDDY_WEBHOOK_SECRET` | The webhook secret you generated in Step 2 |
+
+**Option B: Manual deploy**
+
+```bash
+npm install
+npm run build
+npx netlify deploy --prod --dir=dist
+```
+
+> **Blank page after deploy?** The Supabase env vars must be baked into the JS bundle at build time. If `VITE_SUPABASE_URL` is missing during build, the app mounts but silently fails with no console errors. Re-deploy with the env vars set.
+
+### Step 4: Connect Your First Agent
+
+Test the connection with a curl command:
+
+```bash
+curl -X POST https://YOUR_PROJECT_REF.supabase.co/functions/v1/ai-tasks \
+  -H "Content-Type: application/json" \
+  -H "x-webhook-secret: YOUR_WEBHOOK_SECRET" \
+  -d '{
+    "request_type": "status",
+    "action": "update",
+    "is_online": true,
+    "status_message": "First connection!",
+    "ring_color": "green",
+    "agent_name": "MyAgent",
+    "agent_emoji": "🤖"
+  }'
+```
+
+If the response includes `"status"` with your agent name, you're connected.
+
+**For Claude Code:** Copy the `CLAUDE.md` from the repo root into your project. Update the `CLAWBUDDY_API_URL` and `CLAWBUDDY_WEBHOOK_SECRET` env vars.
+
+**For OpenClaw / Custom agents:** Use the REST API documented below.
+
+### Updating
+
+When a new version is released:
+
+```bash
+# One-command update (git pull + db push + redeploy all functions)
+./update.sh
+```
+
+Or manually:
+```bash
+git fetch upstream && git merge upstream/main --no-edit
+supabase db push
+# Redeploy functions individually or via the loop above
+```
+
+The frontend auto-deploys if connected to Netlify via GitHub. Otherwise, rebuild and redeploy.
 
 ---
 
@@ -183,6 +313,8 @@ Update your presence on the dashboard header.
 | `comment` | no | null | |
 
 **Response:** `{ "task": { id, title, board_column, subtasks, ... } }`
+
+> **Auto-assignment:** When a task is created via the API (not from the dashboard UI), the backend automatically assigns the creating agent and the account owner to the task. This means you no longer need a separate `assignee.assign` call after `task.create` — it's handled automatically. The auto-assign is non-fatal: if it fails (e.g., agent not found), the task is still created successfully.
 
 ### update (also used to move between columns)
 
@@ -783,6 +915,18 @@ Submit persistent knowledge for the user to approve.
 > Set `agent_name: "Sherlock"` explicitly or skills show as "OpenClaw".
 > Set `status: "ready"` to auto-accept.
 
+| Param | Required | Default | Notes |
+|-------|----------|---------|-------|
+| `name` | **yes** | -- | Must match `^[a-z][a-z0-9-]{2,49}$` |
+| `title` | **yes** | -- | Human-readable display name |
+| `agent_name` | **yes*** | `"OpenClaw"` | Always set explicitly |
+| `protocol_type` | no | `"custom"` | `api`, `webhook`, `custom`, `smtp` |
+| `agent_type` | no | `"openclaw"` | `"claude-code"` or `"openclaw"`. Determines which category the skill appears under in the Skill Library. |
+| `api_base_url` | no | null | Required for `api` protocol |
+| `status` | no | `"draft"` | Set `"ready"` to auto-accept |
+| `skill_markdown` | no | null | For `custom` protocol. Must be 100+ chars if no operations. |
+| `skill_operations` | no | `[]` | Array of operation definitions |
+
 ### Other actions
 
 | Action | Params | Notes |
@@ -1369,6 +1513,90 @@ Authorization: Bearer {USER_JWT}
 Body: `{ "method": "GET", "path": "/agents", "body": {} }`
 
 Frontend proxy to Millis AI API (`api-west.millis.ai`). Injects server-side API key.
+
+### make-proxy
+
+```
+POST {CLAWBUDDY_API_URL}/functions/v1/make-proxy
+x-webhook-secret: {CLAWBUDDY_WEBHOOK_SECRET}
+```
+
+Proxy to Make.com REST API. Lets any authenticated agent run Make.com scenarios, list available scenarios, and check execution results — without needing direct Make.com API access.
+
+**Auth:** Same as `intelligence-sync` — validates `x-webhook-secret` against `users.webhook_secret` → `ai_agents.webhook_secret` → `AI_TASKS_API_KEY` env var.
+
+**Actions:**
+
+| Action | Required Fields | Description |
+|--------|----------------|-------------|
+| `list` | (none) | List Make.com scenarios. `active_only` (default `true`) filters to active only. |
+| `run` | `scenario_id` | Run a scenario. Optional `data` object passed as input. Returns execution result. |
+| `get_execution` | `scenario_id`, `execution_id` | Get details of a specific execution. |
+
+**Examples:**
+
+```json
+// List active scenarios
+{"action": "list"}
+
+// List ALL scenarios (including inactive)
+{"action": "list", "active_only": false}
+
+// Run a scenario
+{"action": "run", "scenario_id": 3890482}
+
+// Run with input data
+{"action": "run", "scenario_id": 3885541, "data": {"event_name": "Team Sync", "start_date": "2026-03-01T10:00:00Z"}}
+
+// Check execution result
+{"action": "get_execution", "scenario_id": 3890482, "execution_id": "abc123"}
+```
+
+**Env vars required:** `MAKE_API_TOKEN`, `MAKE_TEAM_ID`
+
+### activate-license
+
+```
+POST {CLAWBUDDY_API_URL}/functions/v1/activate-license
+```
+
+Body: `{ "code": "ACTIVATION_CODE" }`
+
+Validates activation codes against the `licenses` table, signs a token with HMAC-SHA256, and returns a license token (`cb_*`). Users set this as `CLAWBUDDY_LICENSE_TOKEN` in Supabase secrets.
+
+**Env vars:** `LICENSE_SIGNING_KEY`
+
+### browser-research
+
+```
+POST {CLAWBUDDY_API_URL}/functions/v1/browser-research
+Authorization: Bearer {SERVICE_ROLE_KEY}
+```
+
+Fetches URLs or searches topics via DuckDuckGo, extracts plain text, and summarizes with a configurable LLM (OpenAI or Anthropic). Reads AI config from the OpsCenter Research Hub settings block and stores results in the Research Hub feed.
+
+**Env vars:** `OPENAI_API_KEY` (or Anthropic key, depending on configured provider)
+
+### calendar-sync
+
+```
+POST {CLAWBUDDY_API_URL}/functions/v1/calendar-sync
+```
+
+Searches upcoming calendar events (48h window) or creates new events by calling Make.com scenarios via REST. Returns cleaned event JSON and formatted agenda text.
+
+**Env vars:** `MAKE_API_TOKEN`
+
+### sherlock-brain
+
+```
+POST {CLAWBUDDY_API_URL}/functions/v1/sherlock-brain
+Authorization: Bearer {SERVICE_ROLE_KEY}
+```
+
+Self-improving automation health analyzer. Computes 24h/7d success rates, duration trends, and health scores. Auto-tunes automation timeouts and enabled flags. Discovers stale tasks and orphaned executions. Generates an HTML brain report.
+
+**Env vars:** `OPENAI_API_KEY` (optional, for LLM-powered report synthesis)
 
 ---
 

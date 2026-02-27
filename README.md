@@ -46,8 +46,8 @@ supabase db push
 supabase secrets set CLAWBUDDY_WEBHOOK_SECRET=$(openssl rand -hex 32)
 supabase secrets set AI_TASKS_API_KEY=$(openssl rand -hex 32)
 
-# Deploy all edge functions
-for fn in ai-tasks automation-runner sherlock-brain morning-digest evening-report midday-prep competitor-intel intelligence-sync browser-research calendar-sync goal-analyzer report-webhook list-offices manage-office-agent create-office-task office-agent-status reset-office upload-office-deliverable; do
+# Deploy all 24 edge functions
+for fn in ai-tasks automation-runner sherlock-brain morning-digest evening-report midday-prep competitor-intel intelligence-sync browser-research calendar-sync goal-analyzer report-webhook list-offices manage-office-agent create-office-task office-agent-status reset-office upload-office-deliverable activate-license millis-proxy lexa-webhook lexa-precall lexa-campaign-runner make-proxy; do
   supabase functions deploy $fn --no-verify-jwt
 done
 ```
@@ -118,7 +118,7 @@ clawbuddy-kit/
 │           └── Ops*.tsx           # 18 generic blocks (table, feed, kanban, etc.)
 ├── public/                  # Static assets
 ├── supabase/
-│   ├── functions/           # 18 edge functions
+│   ├── functions/           # 24 edge functions
 │   │   ├── ai-tasks/        # Core API (tasks, logs, insights, questions, etc.)
 │   │   ├── automation-runner/   # Scheduled automation orchestrator
 │   │   ├── sherlock-brain/  # Self-improving AI brain
