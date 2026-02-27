@@ -144,6 +144,38 @@ export const RayStatusBadge = ({ showLabel: _showLabel = true, size: _size = 'md
           <AgentPill key={agent.id} agent={agent} />
         ))}
 
+        {/* Status legend */}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button className="text-[10px] text-muted-foreground/50 hover:text-muted-foreground transition-colors h-5 w-5 rounded-full border border-border/30 flex items-center justify-center hover:border-border/60">
+                ?
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-xs">
+              <div className="space-y-1.5 text-xs">
+                <p className="font-medium mb-2">Agent Status Colors</p>
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+                  <span>Green — Working / Online</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-amber-500 shrink-0" />
+                  <span>Yellow — Waiting / Thinking</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-destructive shrink-0" />
+                  <span>Red — Error / Blocked</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-muted-foreground/50 shrink-0" />
+                  <span>Gray — Offline</span>
+                </div>
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
         {/* Queued tasks badge */}
         {pendingCount > 0 && connectionStatus.connectionState !== 'online' && (
           <motion.span

@@ -5,6 +5,7 @@ import { useUnreadLogCount } from '@/hooks/useAiLog';
 
 import { useUnreadReportsCount } from '@/hooks/useReports';
 import { useFailedAutomationsCount } from '@/hooks/useAutomations';
+import { useNeedsInputCount } from '@/hooks/useNeedsInputCount';
 import { useAiSettings } from '@/contexts/AiSettingsContext';
 import { ClawBuddyLogo } from '@/components/branding/ClawBuddyLogo';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,7 @@ import { motion } from 'framer-motion';
 
 const navItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
-  { title: 'Board', url: '/board', icon: Kanban },
+  { title: 'Board', url: '/board', icon: Kanban, showNeedsInputBadge: true },
   { title: 'Ops Center', url: '/ops-center', icon: Radar },
   { title: 'AI Employees', url: '/ai-employees', icon: Briefcase },
   { title: 'Automations', url: '/automations', icon: CalendarClock, showAutomationBadge: true },
@@ -37,6 +38,7 @@ export const Sidebar = () => {
 
   const { data: unreadReportsCount = 0 } = useUnreadReportsCount();
   const { data: failedAutomationsCount = 0 } = useFailedAutomationsCount();
+  const { data: needsInputCount = 0 } = useNeedsInputCount();
   const { settings } = useAiSettings();
 
   return (
@@ -129,12 +131,21 @@ export const Sidebar = () => {
                 </motion.span>
               )}
               {item.showAutomationBadge && failedAutomationsCount > 0 && (
-                <motion.span 
+                <motion.span
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
                   className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-destructive text-[10px] font-bold flex items-center justify-center text-destructive-foreground shadow-lg"
                 >
                   {failedAutomationsCount > 9 ? '9+' : failedAutomationsCount}
+                </motion.span>
+              )}
+              {item.showNeedsInputBadge && needsInputCount > 0 && (
+                <motion.span
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -top-1.5 -right-1.5 h-4 w-4 rounded-full bg-purple-500 text-[10px] font-bold flex items-center justify-center text-white shadow-[0_0_8px_rgba(168,85,247,0.6)]"
+                >
+                  {needsInputCount > 9 ? '9+' : needsInputCount}
                 </motion.span>
               )}
             </div>

@@ -76,7 +76,16 @@ export const KanbanColumn = ({ column, tasks, onTaskClick }: KanbanColumnProps) 
       <div className="p-4 border-b border-white/10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className={cn("w-2.5 h-2.5 rounded-full", getColumnDotColor(column.name))} />
+            <div className="relative">
+              <div className={cn("w-2.5 h-2.5 rounded-full", getColumnDotColor(column.name))} />
+              {column.name.toLowerCase().includes('needs') && tasks.length > 0 && (
+                <motion.div
+                  className="absolute inset-0 w-2.5 h-2.5 rounded-full bg-column-needs-input/50"
+                  animate={{ scale: [1, 1.8, 1], opacity: [0.8, 0, 0.8] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                />
+              )}
+            </div>
             <h3 className="font-orbitron font-semibold uppercase tracking-wider text-foreground">
               {column.name}
             </h3>

@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { TaskStatsChart } from '@/components/charts/TaskStatsChart';
 import { PriorityChart } from '@/components/charts/PriorityChart';
 import { WeeklyProgressChart } from '@/components/charts/WeeklyProgressChart';
+import { AiImpactPanel } from '@/components/dashboard/AiImpactPanel';
 import { AiAssistantAvatar } from '@/components/ai-assistant/AiAssistantAvatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -174,6 +175,11 @@ export const DashboardPage = () => {
               </motion.div>
             ))}
       </div>
+
+      {/* Row 2.5: AI Impact */}
+      <motion.div {...fadeUp(0.15)}>
+        <AiImpactPanel />
+      </motion.div>
 
       {/* Row 3: Charts + Panels */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
