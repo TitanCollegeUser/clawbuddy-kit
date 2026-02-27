@@ -1,0 +1,32 @@
+-- Add Lexa Voice AI block types to the OpsCenter block type validator
+CREATE OR REPLACE FUNCTION public.validate_ops_block_type()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SET search_path TO 'public'
+AS $function$
+BEGIN
+  IF NEW.block_type NOT IN (
+    'kanban', 'table', 'list', 'metric_cards', 'progress_bar',
+    'chart', 'text', 'office', 'feed', 'form', 'embed',
+    'timeline', 'calendar', 'gallery', 'agent_card',
+    'approval_queue', 'comparison', 'alert_banner', 'countdown',
+    'yt_dashboard', 'yt_competitors', 'yt_banger_lab',
+    'yt_pipeline', 'yt_scripts', 'yt_intel_feed', 'yt_outlier_feed',
+    'yt_analytics',
+    'outreach_scoreboard', 'outreach_leads', 'outreach_phone',
+    'outreach_email', 'outreach_campaigns', 'outreach_results',
+    'meeting_intel',
+    'employee_campaign_creator',
+    'employee_lead_table',
+    'employee_analytics',
+    'lexa_dashboard',
+    'lexa_call_log',
+    'lexa_analytics',
+    'lexa_transcripts',
+    'lexa_campaigns'
+  ) THEN
+    RAISE EXCEPTION 'Invalid ops_blocks block_type: %', NEW.block_type;
+  END IF;
+  RETURN NEW;
+END;
+$function$;

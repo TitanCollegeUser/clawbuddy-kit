@@ -38,6 +38,19 @@ import { OpsYtIntelFeedBlock } from './blocks/OpsYtIntelFeedBlock';
 import { OpsYtOutlierFeedBlock } from './blocks/OpsYtOutlierFeedBlock';
 import { OpsBlockWrapper } from './blocks/OpsBlockWrapper';
 import { ResearchHubBlock } from './research-hub/ResearchHubBlock';
+import { OpsLexaDashboardBlock } from './blocks/OpsLexaDashboardBlock';
+import { OpsLexaCallLogBlock } from './blocks/OpsLexaCallLogBlock';
+import { OpsLexaAnalyticsBlock } from './blocks/OpsLexaAnalyticsBlock';
+import { OpsLexaTranscriptsBlock } from './blocks/OpsLexaTranscriptsBlock';
+import { OpsLexaCampaignsBlock } from './blocks/OpsLexaCampaignsBlock';
+import { OpsLexaLeadsBlock } from './blocks/OpsLexaLeadsBlock';
+// Nova Email AI blocks
+import { OpsNovaDashboardBlock } from './blocks/OpsNovaDashboardBlock';
+import { OpsNovaOutboxBlock } from './blocks/OpsNovaOutboxBlock';
+import { OpsNovaTemplatesBlock } from './blocks/OpsNovaTemplatesBlock';
+import { OpsNovaSequencesBlock } from './blocks/OpsNovaSequencesBlock';
+import { OpsNovaCampaignsBlock } from './blocks/OpsNovaCampaignsBlock';
+import { OpsNovaAnalyticsBlock } from './blocks/OpsNovaAnalyticsBlock';
 
 const RESEARCH_HUB_APP_ID = '6149611f-1c3b-4906-9c5b-1fa58d0cd7ce';
 
@@ -106,6 +119,20 @@ const renderBlock = (block: OpsBlock, appId: string) => {
     case 'employee_lead_table': return <OpsEmployeeLeadTableBlock {...props} />;
     case 'employee_analytics': return <OpsEmployeeAnalyticsBlock {...props} />;
     case 'meeting_intel': return <OpsMeetingIntelBlock {...props} />;
+    // Lexa Voice AI blocks
+    case 'lexa_dashboard': return <OpsLexaDashboardBlock {...props} />;
+    case 'lexa_call_log': return <OpsLexaCallLogBlock {...props} />;
+    case 'lexa_analytics': return <OpsLexaAnalyticsBlock {...props} />;
+    case 'lexa_transcripts': return <OpsLexaTranscriptsBlock {...props} />;
+    case 'lexa_campaigns': return <OpsLexaCampaignsBlock {...props} />;
+    case 'lexa_leads': return <OpsLexaLeadsBlock {...props} />;
+    // Nova Email AI blocks
+    case 'nova_dashboard': return <OpsNovaDashboardBlock {...props} />;
+    case 'nova_outbox': return <OpsNovaOutboxBlock {...props} />;
+    case 'nova_templates': return <OpsNovaTemplatesBlock {...props} />;
+    case 'nova_sequences': return <OpsNovaSequencesBlock {...props} />;
+    case 'nova_campaigns': return <OpsNovaCampaignsBlock {...props} />;
+    case 'nova_analytics': return <OpsNovaAnalyticsBlock {...props} />;
     case 'office':
       return (
         <div className="glass rounded-xl p-6 text-center">

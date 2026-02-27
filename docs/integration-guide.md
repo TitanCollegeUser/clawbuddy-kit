@@ -1,7 +1,7 @@
 # ClawBuddy Integration Guide v3.0.0
 
-> Last updated: February 26, 2026
-> Source of truth: Audited directly from `ai-tasks/index.ts` (4,852 lines) and 15 Edge Functions.
+> Last updated: February 27, 2026
+> Source of truth: Audited directly from `ai-tasks/index.ts` (4,852 lines) and 20 Edge Functions.
 > Supabase project: `YOUR_PROJECT_REF`
 
 ---
@@ -1322,10 +1322,53 @@ AI-powered goal decomposition via Gemini 2.5 Pro. Returns assumptions, metrics, 
 
 ```
 POST {CLAWBUDDY_API_URL}/functions/v1/report-webhook?endpoint={slug}
-x-webhook-secret: {PER_ENDPOINT_SECRET}
 ```
 
 Receives external webhook payloads, queues as `raw_reports`. If `auto_process: true`, triggers processing via ai-tasks.
+
+**Authentication (two methods supported):**
+
+1. **Simple secret header** (default): `x-webhook-secret: {PER_ENDPOINT_SECRET}` — compared against `webhook_endpoints.secret`.
+2. **HMAC signature verification** (Fathom/Svix-style): Detected when request includes `webhook-id`, `webhook-timestamp`, `webhook-signature` headers. Uses `FATHOM_WEBHOOK_SECRET` env var (format: `whsec_<base64key>`). Verifies HMAC-SHA256 of `{id}.{timestamp}.{rawBody}` with 5-minute timestamp tolerance.
+
+**Env var:** `FATHOM_WEBHOOK_SECRET` — Required for Fathom webhook verification. Store via `supabase secrets set`.
+
+### lexa-webhook
+
+```
+POST {CLAWBUDDY_API_URL}/functions/v1/lexa-webhook
+```
+
+Receives Millis AI call completion events. Parses transcript, determines call type (inbound/outbound/campaign), calculates cost, analyzes sentiment. Writes to `lexa_calls`, dual-writes to `ops_data` (OpsCenter feed + call log), updates `lexa_daily_metrics`. Updates campaign counters and lead status if applicable.
+
+**Env vars:** `MILLIS_API_KEY`
+
+### lexa-precall
+
+```
+POST {CLAWBUDDY_API_URL}/functions/v1/lexa-precall
+```
+
+Provides pre-call context to Millis AI agent. Returns lead info, previous call history, and campaign context for personalized conversations.
+
+### lexa-campaign-runner
+
+```
+POST {CLAWBUDDY_API_URL}/functions/v1/lexa-campaign-runner
+```
+
+Processes Lexa outbound call campaigns. Picks up queued calls from `lexa_campaigns`, initiates calls via Millis AI API, tracks progress.
+
+### millis-proxy
+
+```
+POST {CLAWBUDDY_API_URL}/functions/v1/millis-proxy
+Authorization: Bearer {USER_JWT}
+```
+
+Body: `{ "method": "GET", "path": "/agents", "body": {} }`
+
+Frontend proxy to Millis AI API (`api-west.millis.ai`). Injects server-side API key.
 
 ---
 
@@ -1366,6 +1409,14 @@ Receives external webhook payloads, queues as `raw_reports`. If `auto_process: t
 - **`feed` items need `metadata.agent`** for agent badge rendering. Without `metadata: {"agent": "AgentName"}`, items render but show no agent badge. Always set `metadata.agent` when creating feed records.
 - **`list_data` response key differs by filter.** Without `block_id`, response uses `data` key. With `block_id`, response uses `items` key. Always check both keys when parsing responses.
 - **Block configs must be set explicitly.** Creating a block with `config: {}` and then adding data will show "No data yet" in the frontend even though records exist in the database. Set the component-specific config (see Block Type Config Reference above) BEFORE or alongside data population.
+
+### Webhook Integration Gotchas
+
+- **Third-party webhooks often use HMAC, not simple secret headers.** Fathom, Stripe, GitHub, and Svix-based services sign payloads with HMAC-SHA256 instead of passing a secret in a header. The `report-webhook` function now supports both methods.
+- **Must read raw body BEFORE parsing JSON** when doing HMAC verification. The body stream can only be consumed once — read as text first, verify signature, then `JSON.parse()`.
+- **Fathom webhook secret format:** `whsec_<base64key>`. Decode the part after `whsec_` for the HMAC key.
+- **Fathom webhook events:** Sends Transcript, Summary, and Action Items per meeting. Configurable per webhook in the API key Manage page.
+- **Fathom webhook docs:** `https://developers.fathom.ai/webhooks`
 
 ### Automation & Cron Gotchas
 
@@ -1478,6 +1529,25 @@ Receives external webhook payloads, queues as `raw_reports`. If `auto_process: t
 | `office_events` | Agent events |
 | `office_activity_log` | Activity feed |
 | `office_deliverables` | Uploaded files |
+
+### AI Employees — Lexa (Phone)
+
+| Table | Purpose |
+|-------|---------|
+| `lexa_calls` | Call records with transcript, sentiment, cost |
+| `lexa_leads` | Lead contact database |
+| `lexa_campaigns` | Outbound call campaigns |
+| `lexa_daily_metrics` | Pre-aggregated daily call stats |
+
+### AI Employees — Nova (Email)
+
+| Table | Purpose |
+|-------|---------|
+| `nova_templates` | Email template library with `{{variables}}` |
+| `nova_sequences` | Multi-step email sequences |
+| `nova_campaigns` | Email campaigns with send settings |
+| `nova_emails` | Individual emails with lifecycle tracking |
+| `nova_daily_metrics` | Pre-aggregated daily email stats |
 
 ### Other
 
