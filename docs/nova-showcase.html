@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nova — Your AI Email Employee</title>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg-deep:#0a0a0f;--bg-card:rgba(255,255,255,0.03);--bg-card-hover:rgba(255,255,255,0.06);
+    --border-card:rgba(255,255,255,0.06);--border-card-hover:rgba(255,255,255,0.12);
+    --text-primary:#e8e8ed;--text-secondary:#8b8b9e;--text-muted:#55556a;
+    --accent-purple:#8b5cf6;--accent-blue:#3b82f6;--accent-cyan:#06b6d4;
+    --accent-pink:#ec4899;--accent-emerald:#10b981;--accent-amber:#f59e0b;
+    --accent-red:#ef4444;--accent-indigo:#6366f1;
+    --gradient-main:linear-gradient(135deg,#8b5cf6,#3b82f6,#06b6d4);
+    --glass-bg:rgba(15,15,25,0.6);--glass-border:rgba(255,255,255,0.08);
+    --radius:16px;--radius-sm:10px;
+    --shadow-glow:0 0 60px rgba(139,92,246,0.08),0 0 120px rgba(59,130,246,0.04);
+  }
+  html{scroll-behavior:smooth;font-size:16px}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:var(--bg-deep);color:var(--text-primary);line-height:1.6;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+  .bg-grid{position:fixed;inset:0;z-index:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,0.012) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.012) 1px,transparent 1px);background-size:64px 64px}
+  .bg-orb{position:fixed;border-radius:50%;filter:blur(120px);pointer-events:none;z-index:0;animation:orbFloat 20s ease-in-out infinite alternate}
+  .bg-orb--1{width:600px;height:600px;top:-200px;left:-100px;background:rgba(139,92,246,0.07)}
+  .bg-orb--2{width:500px;height:500px;bottom:-150px;right:-100px;background:rgba(6,182,212,0.06);animation-delay:-7s}
+  @keyframes orbFloat{0%{transform:translate(0,0) scale(1)}50%{transform:translate(30px,-20px) scale(1.05)}100%{transform:translate(-20px,30px) scale(0.95)}}
+  .container{max-width:1200px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+  section{padding:100px 0}
+  @media(max-width:768px){section{padding:64px 0}.container{padding:0 16px}}
+  h1,h2,h3,h4{font-weight:700;letter-spacing:-0.02em;line-height:1.15}
+  .section-label{display:inline-flex;align-items:center;gap:8px;font-size:0.75rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent-cyan);margin-bottom:16px}
+  .section-label::before{content:'';display:block;width:24px;height:1px;background:var(--accent-cyan)}
+  .section-title{font-size:clamp(2rem,4vw,3rem);margin-bottom:16px}
+  .section-subtitle{font-size:1.1rem;color:var(--text-secondary);max-width:640px;margin-bottom:48px}
+  .gradient-text{background:var(--gradient-main);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+  .glass{background:var(--glass-bg);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:1px solid var(--glass-border);border-radius:var(--radius);transition:border-color 0.3s,background 0.3s,transform 0.3s,box-shadow 0.3s}
+  .glass:hover{border-color:var(--border-card-hover);background:var(--bg-card-hover);transform:translateY(-2px);box-shadow:var(--shadow-glow)}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:14px 32px;border:none;border-radius:999px;font-size:0.95rem;font-weight:600;cursor:pointer;transition:transform 0.2s,box-shadow 0.2s;text-decoration:none}
+  .btn--primary{background:var(--gradient-main);color:#fff;box-shadow:0 4px 24px rgba(139,92,246,0.3)}
+  .btn--primary:hover{transform:translateY(-1px);box-shadow:0 8px 32px rgba(139,92,246,0.4)}
+  .btn--ghost{background:transparent;color:var(--text-primary);border:1px solid var(--glass-border)}
+  .btn--ghost:hover{border-color:var(--accent-purple);background:rgba(139,92,246,0.06)}
+
+  /* Hero */
+  .hero{min-height:100vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:120px 24px 80px;position:relative}
+  .hero__badge{display:inline-flex;align-items:center;gap:8px;padding:6px 16px 6px 8px;border:1px solid rgba(139,92,246,0.25);border-radius:999px;background:rgba(139,92,246,0.06);font-size:0.8rem;color:var(--accent-purple);font-weight:500;margin-bottom:32px;animation:fadeInUp 0.6s ease both}
+  .hero__badge-dot{width:8px;height:8px;border-radius:50%;background:var(--accent-emerald);box-shadow:0 0 8px var(--accent-emerald);animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+  .hero h1{font-size:clamp(2.8rem,7vw,5.5rem);margin-bottom:20px;animation:fadeInUp 0.6s ease 0.1s both}
+  .hero__subtitle{font-size:clamp(1.1rem,2.5vw,1.35rem);color:var(--text-secondary);max-width:720px;margin:0 auto 40px;animation:fadeInUp 0.6s ease 0.2s both}
+  .hero__oneliner{font-size:0.95rem;color:var(--text-muted);max-width:680px;margin:0 auto 48px;line-height:1.7;animation:fadeInUp 0.6s ease 0.3s both}
+  .hero__actions{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;animation:fadeInUp 0.6s ease 0.4s both}
+  .hero__scroll{position:absolute;bottom:32px;left:50%;transform:translateX(-50%);animation:bounce 2s ease-in-out infinite}
+  .hero__scroll svg{width:24px;height:24px;stroke:var(--text-muted);fill:none;stroke-width:2}
+  @keyframes bounce{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(8px)}}
+  @keyframes fadeInUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+
+  /* Stats */
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:24px}
+  .stat-card{padding:36px 28px;text-align:center;position:relative;overflow:hidden}
+  .stat-card__number{font-size:clamp(2.2rem,4vw,3rem);font-weight:800;margin-bottom:8px;line-height:1}
+  .stat-card__label{font-size:0.85rem;color:var(--text-secondary)}
+  .stat-card__bar{position:absolute;bottom:0;left:0;right:0;height:3px;background:var(--gradient-main);opacity:0;transition:opacity 0.3s}
+  .stat-card:hover .stat-card__bar{opacity:1}
+
+  /* Category Sections */
+  .category{margin-bottom:80px}
+  .category__header{display:flex;align-items:center;gap:16px;margin-bottom:32px}
+  .category__icon{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0}
+  .category__icon--red{background:rgba(239,68,68,0.1);color:var(--accent-red)}
+  .category__icon--amber{background:rgba(245,158,11,0.1);color:var(--accent-amber)}
+  .category__icon--purple{background:rgba(139,92,246,0.1);color:var(--accent-purple)}
+  .category__icon--cyan{background:rgba(6,182,212,0.1);color:var(--accent-cyan)}
+  .category__icon--emerald{background:rgba(16,185,129,0.1);color:var(--accent-emerald)}
+  .category__count{font-size:0.7rem;font-weight:600;padding:3px 10px;border-radius:999px;background:rgba(139,92,246,0.1);color:var(--accent-purple);text-transform:uppercase;letter-spacing:0.05em}
+
+  /* Skill List */
+  .skill-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px}
+  @media(max-width:400px){.skill-list{grid-template-columns:1fr}}
+  .skill-item{padding:24px;position:relative;overflow:hidden}
+  .skill-item__name{font-size:0.95rem;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+  .skill-item__name code{font-size:0.7rem;color:var(--text-muted);font-family:'SF Mono',Monaco,Consolas,monospace;background:rgba(255,255,255,0.04);padding:2px 8px;border-radius:4px;font-weight:400}
+  .skill-item__desc{font-size:0.84rem;color:var(--text-secondary);line-height:1.6}
+  .skill-item__tags{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .skill-item__tag{font-size:0.65rem;font-weight:600;padding:2px 8px;border-radius:999px;text-transform:uppercase;letter-spacing:0.04em}
+  .skill-item__tag--custom{background:rgba(139,92,246,0.1);color:var(--accent-purple)}
+  .skill-item__tag--rest{background:rgba(59,130,246,0.1);color:var(--accent-blue)}
+  .skill-item__tag--webhook{background:rgba(16,185,129,0.1);color:var(--accent-emerald)}
+  .skill-item__tag--smtp{background:rgba(245,158,11,0.1);color:var(--accent-amber)}
+  .skill-item__tag--ops{background:rgba(6,182,212,0.08);color:var(--accent-cyan);font-weight:400}
+  .skill-item__glow{position:absolute;top:-30px;right:-30px;width:100px;height:100px;border-radius:50%;filter:blur(50px);opacity:0;transition:opacity 0.4s;pointer-events:none}
+  .skill-item:hover .skill-item__glow{opacity:1}
+
+  /* Pipeline Visual */
+  .pipeline{display:flex;align-items:center;gap:0;flex-wrap:wrap;justify-content:center;margin:48px 0}
+  .pipeline__step{padding:12px 20px;border-radius:var(--radius-sm);text-align:center;font-size:0.78rem;font-weight:600;position:relative;min-width:120px}
+  .pipeline__step--1{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.15);color:var(--accent-red)}
+  .pipeline__step--2{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.15);color:var(--accent-amber)}
+  .pipeline__step--3{background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.15);color:var(--accent-purple)}
+  .pipeline__step--4{background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.15);color:var(--accent-blue)}
+  .pipeline__step--5{background:rgba(6,182,212,0.08);border:1px solid rgba(6,182,212,0.15);color:var(--accent-cyan)}
+  .pipeline__step--6{background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15);color:var(--accent-emerald)}
+  .pipeline__arrow{color:var(--text-muted);font-size:1.2rem;padding:0 4px;flex-shrink:0}
+  @media(max-width:768px){.pipeline{gap:8px}.pipeline__arrow{display:none}.pipeline__step{min-width:calc(50% - 8px)}}
+
+  .arch-note{padding:20px 28px;border-radius:var(--radius-sm);background:rgba(16,185,129,0.04);border:1px solid rgba(16,185,129,0.12);color:var(--text-secondary);font-size:0.9rem;line-height:1.7;display:flex;align-items:flex-start;gap:12px;margin-top:48px}
+  .arch-note__icon{color:var(--accent-emerald);flex-shrink:0;margin-top:2px}
+
+  .footer{padding:48px 24px;text-align:center;border-top:1px solid rgba(255,255,255,0.04)}
+  .footer__brand{font-size:0.9rem;color:var(--text-muted);margin-bottom:8px}
+  .footer__legal{font-size:0.75rem;color:var(--text-muted);opacity:0.5}
+  .footer__divider{width:64px;height:2px;margin:16px auto;background:var(--gradient-main);border-radius:2px;opacity:0.4}
+
+  .reveal{opacity:0;transform:translateY(32px);transition:opacity 0.7s ease,transform 0.7s ease}
+  .reveal.visible{opacity:1;transform:translateY(0)}
+  .reveal-delay-1{transition-delay:0.1s}.reveal-delay-2{transition-delay:0.2s}.reveal-delay-3{transition-delay:0.3s}
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-orb bg-orb--1"></div>
+<div class="bg-orb bg-orb--2"></div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="container">
+    <div class="hero__badge"><span class="hero__badge-dot"></span>Email AI &middot; Resend Platform &middot; Engagement Tracking</div>
+    <h1><span class="gradient-text">Nova</span></h1>
+    <p class="hero__subtitle">Your AI Email Employee</p>
+    <p class="hero__oneliner">
+      Nova sends personalized email sequences, tracks every open and click, detects replies, and books meetings &mdash; all on autopilot.
+      She manages templates, runs multi-step sequences, and gives you real engagement analytics.
+    </p>
+    <div class="hero__actions">
+      <a href="#pipeline" class="btn btn--primary">See How It Works</a>
+      <a href="#features" class="btn btn--ghost">Explore Features</a>
+    </div>
+  </div>
+  <div class="hero__scroll"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12l7 7 7-7"/></svg></div>
+</section>
+
+<!-- STATS -->
+<section>
+  <div class="container">
+    <div class="stats-grid">
+      <div class="glass stat-card reveal">
+        <div class="stat-card__number gradient-text">6</div>
+        <div class="stat-card__label">Dashboard Views</div>
+        <div class="stat-card__bar"></div>
+      </div>
+      <div class="glass stat-card reveal reveal-delay-1">
+        <div class="stat-card__number gradient-text">5</div>
+        <div class="stat-card__label">Database Tables</div>
+        <div class="stat-card__bar"></div>
+      </div>
+      <div class="glass stat-card reveal reveal-delay-2">
+        <div class="stat-card__number gradient-text">8</div>
+        <div class="stat-card__label">Email Lifecycle Statuses</div>
+        <div class="stat-card__bar"></div>
+      </div>
+      <div class="glass stat-card reveal reveal-delay-3">
+        <div class="stat-card__number gradient-text">Full</div>
+        <div class="stat-card__label">Engagement Funnel</div>
+        <div class="stat-card__bar"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EMAIL PIPELINE VISUAL -->
+<section id="pipeline">
+  <div class="container">
+    <span class="section-label reveal">The Email Pipeline</span>
+    <h2 class="section-title reveal">From Template to Meeting &mdash; <span class="gradient-text">Automated</span></h2>
+    <p class="section-subtitle reveal">Every email follows the same lifecycle. Nova handles every step from drafting to booking the meeting.</p>
+
+    <div class="pipeline reveal">
+      <div class="pipeline__step pipeline__step--1">Template</div>
+      <span class="pipeline__arrow">&rarr;</span>
+      <div class="pipeline__step pipeline__step--1">Variables</div>
+      <span class="pipeline__arrow">&rarr;</span>
+      <div class="pipeline__step pipeline__step--2">Personalization</div>
+      <span class="pipeline__arrow">&rarr;</span>
+      <div class="pipeline__step pipeline__step--3">Send via Resend</div>
+      <span class="pipeline__arrow">&rarr;</span>
+      <div class="pipeline__step pipeline__step--4">Track Events</div>
+      <span class="pipeline__arrow">&rarr;</span>
+      <div class="pipeline__step pipeline__step--5">Detect Reply</div>
+      <span class="pipeline__arrow">&rarr;</span>
+      <div class="pipeline__step pipeline__step--6">Book Meeting</div>
+    </div>
+
+    <div class="arch-note reveal">
+      <span class="arch-note__icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </span>
+      <span>
+        <strong>Every email follows the same lifecycle:</strong> queued, sending, delivered, opened, clicked, replied &mdash; or bounced/failed. Nova tracks the full journey with timestamps and counts. Open an email 3 times? Nova knows. Click a link then reply? Tracked. Reply mentions a calendar link? Meeting booked.
+      </span>
+    </div>
+  </div>
+</section>
+
+<!-- ALL FEATURES BY CATEGORY -->
+<section id="features">
+  <div class="container">
+    <span class="section-label reveal">Full Feature Set</span>
+    <h2 class="section-title reveal">Everything Nova Manages</h2>
+    <p class="section-subtitle reveal">Four capability areas covering the entire email lifecycle &mdash; from template creation to meeting conversion.</p>
+
+    <!-- COMMAND CENTER -->
+    <div class="category reveal">
+      <div class="category__header">
+        <div class="category__icon category__icon--purple">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        </div>
+        <div>
+          <h3 style="font-size:1.2rem">Command Center</h3>
+          <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:4px">Real-time email analytics and activity monitoring</p>
+        </div>
+        <span class="category__count">6 views</span>
+      </div>
+      <div class="skill-list">
+
+        <div class="skill-item glass">
+          <div class="skill-item__glow" style="background:rgba(139,92,246,0.12)"></div>
+          <div class="skill-item__name">KPI Dashboard</div>
+          <div class="skill-item__desc">6 metrics: Emails Sent, Open Rate, Reply Rate, Meetings Booked, Bounce Rate, and Queue Depth.</div>
+        </div>
+
+        <div class="skill-item glass">
+          <div class="skill-item__glow" style="background:rgba(139,92,246,0.12)"></div>
+          <div class="skill-item__name">Email Volume Chart</div>
+          <div class="skill-item__desc">3-series area chart: sent, opened, replied over time with period selector.</div>
+        </div>
+
+        <div class="skill-item glass">
+          <div class="skill-item__glow" style="background:rgba(139,92,246,0.12)"></div>
+          <div class="skill-item__name">Engagement Funnel</div>
+          <div class="skill-item__desc">Horizontal stacked bars: Sent &rarr; Delivered &rarr; Opened &rarr; Clicked &rarr; Replied &rarr; Meetings. Each with percentage and count.</div>
+        </div>
+
+        <div class="skill-item glass">
+          <div class="skill-item__glow" style="background:rgba(139,92,246,0.12)"></div>
+          <div class="skill-item__name">Recent Activity Feed</div>
+          <div class="skill-item__desc">Last 10 emails with status badges: delivered, opened, clicked, replied, bounced, failed, sending.</div>
+        </div>
+
+        <div class="skill-item glass">
+          <div class="skill-item__glow" style="background:rgba(139,92,246,0.12)"></div>
+          <div class="skill-item__name">Top Performers</div>
+          <div class="skill-item__desc">Emails with highest open counts. See which subjects and personalization strategies actually work.</div>
+        </div>
+
+        <div class="skill-item glass">
+          <div class="skill-item__glow" style="background:rgba(139,92,246,0.12)"></div>
+          <div class="skill-item__name">Peak Hours Heatmap</div>
+          <div class="skill-item__desc">7-day &times; 3 time-block grid (Morning, Afternoon, Evening) showing send intensity patterns.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TEMPLATE & SEQUENCE ENGINE -->
+    <div class="category reveal">
+      <div class="category__header">
+        <div class="category__icon category__icon--cyan">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </div>
+        <div>
+          <h3 style="font-size:1.2rem">Template &amp; Sequence Engine</h3>
+          <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:4px">Build, organize, and automate multi-step email flows</p>
+        </div>
+        <span class="category__count">5 capabilities</span>
+      </div>
+      <div class="skill-list">
+
+        <div class="skill-item glass">
+          <div class="skill-item__glow" style="background:rgba(6,182,212,0.12)"></div>
+          <div class="skill-item__name">Template Editor</div>
+          <div class="skill-item__desc">Build email templates with {{variable}} placeholders. Subject line, HTML body, plain text fallback. Track usage count and performance.</div>
+        </div>
+
+        <div class="skill-item glass">
+          <div class="skill-item__glow" style="background:rgba(6,182,212,0.12)"></div>
+          <div class="skill-item__name">5 Template Categories</div>
+          <div class="skill-item__desc">Organized: outreach, follow-up, nurture, re-engagement, meeting-request. Filter and search across your library.</div>
+        </div>
+
+        <div class="skill-item glass">
+          <div class="skill-item__glow" style="background:rgba(6,182,212,0.12)"></div>
+          <div class="skill-item__name">Sequence Builder</div>
+          <div class="skill-item__desc">Multi-step email sequences with delays and conditions. Step 1: intro (Day 0) &rarr; Step 2: follow-up (Day 3, if no reply) &rarr; Step 3: breakup (Day 7).</div>
+        </div>
+
+        <div class="skill-item glass">
+          <div class="skill-item__glow" style="background:rgba(6,182,212,0.12)"></div>
+          <div class="skill-item__name">Variable Substitution</div>
+          <div class="skill-item__desc">{{name}}, {{company}}, {{role}} &mdash; extracted automatically from templates, filled per-lead at send time.</div>
+        </div>
+
+        <div class="skill-item glass">
+          <div class="skill-item__glow" style="background:rgba(6,182,212,0.12)"></div>
+          <div class="skill-item__name">Performance Tracking</div>
+          <div class="skill-item__desc">Per-template avg_open_rate and avg_reply_rate. Know exactly which templates convert.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CAMPAIGN MANAGEMENT -->
+    <div class="category reveal">
+      <div class="category__header">
+        <div class="category__icon category__icon--amber">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </div>
+        <div>
+          <h3 style="font-size:1.2rem">Campaign Management</h3>
+          <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:4px">Launch, control, and measure email campaigns</p>
+        </div>
+        <span class="category__count">5 capabilities</span>
+      </div>
+      <div class="skill-list">
+
+        <div class="skill-item glass">
+          <div class="skill-item__glow" style="background:rgba(245,158,11,0.12)"></div>
+          <div class="skill-item__name">3-Step Campaign Wizard</div>
+          <div class="skill-item__desc">Setup (name, template, leads) &rarr; Send Settings (limits, window, timezone) &rarr; Review &amp; Launch.</div>
+        </div>
+
+        <div class="skill-item glass">
+          <div class="skill-item__glow" style="background:rgba(245,158,11,0.12)"></div>
+          <div class="skill-item__name">Daily Send Limits</div>
+          <div class="skill-item__desc">Configurable per campaign. Default: 50 emails/day. Prevents spam flags and maintains deliverability.</div>
+        </div>
+
+        <div class="skill-item glass">
+          <div class="skill-item__glow" style="background:rgba(245,158,11,0.12)"></div>
+          <div class="skill-item__name">Time-Window Scheduling</div>
+          <div class="skill-item__desc">Send only during business hours. Default: 09:00-17:00 in your timezone. Customizable per campaign.</div>
+        </div>
+
+        <div class="skill-item glass">
+          <div class="skill-item__glow" style="background:rgba(245,158,11,0.12)"></div>
+          <div class="skill-item__name">Status Tracking</div>
+          <div class="skill-item__desc">Campaign lifecycle: draft &rarr; active &rarr; paused &rarr; completed. Pause mid-campaign and resume anytime.</div>
+        </div>
+
+        <div class="skill-item glass">
+          <div class="skill-item__glow" style="background:rgba(245,158,11,0.12)"></div>
+          <div class="skill-item__name">Campaign Analytics</div>
+          <div class="skill-item__desc">Per-campaign: total leads, emails sent, delivered, opened, clicked, replied, bounced, meetings booked, total cost.</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ENGAGEMENT TRACKING -->
+    <div class="category reveal">
+      <div class="category__header">
+        <div class="category__icon category__icon--emerald">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div>
+          <h3 style="font-size:1.2rem">Engagement Tracking</h3>
+          <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:4px">Track every open, click, reply, and conversion</p>
+        </div>
+        <span class="category__count">6 capabilities</span>
+      </div>
+      <div class="skill-list">
+
+        <div class="skill-item glass">
+          <div class="skill-item__glow" style="background:rgba(16,185,129,0.12)"></div>
+          <div class="skill-item__name">Open Tracking</div>
+          <div class="skill-item__desc">First open timestamp, total open count. Know exactly when and how many times each email is read.</div>
+        </div>
+
+        <div class="skill-item glass">
+          <div class="skill-item__glow" style="background:rgba(16,185,129,0.12)"></div>
+          <div class="skill-item__name">Click Tracking</div>
+          <div class="skill-item__desc">Click timestamp and click count. Track which links in your emails drive action.</div>
+        </div>
+
+        <div class="skill-item glass">
+          <div class="skill-item__glow" style="background:rgba(16,185,129,0.12)"></div>
+          <div class="skill-item__name">Reply Detection</div>
+          <div class="skill-item__desc">Reply timestamp with snippet preview. See the first line of every reply without leaving the dashboard.</div>
+        </div>
+
+        <div class="skill-item glass">
+          <div class="skill-item__glow" style="background:rgba(16,185,129,0.12)"></div>
+          <div class="skill-item__name">Bounce Handling</div>
+          <div class="skill-item__desc">Bounce type (hard/soft), timestamp. Automatically flags problem addresses.</div>
+        </div>
+
+        <div class="skill-item glass">
+          <div class="skill-item__glow" style="background:rgba(16,185,129,0.12)"></div>
+          <div class="skill-item__name">Meeting Detection</div>
+          <div class="skill-item__desc">Boolean flag when reply contains calendar/meeting links. Tracks conversion from email to meeting.</div>
+        </div>
+
+        <div class="skill-item glass">
+          <div class="skill-item__glow" style="background:rgba(16,185,129,0.12)"></div>
+          <div class="skill-item__name">8-Status Lifecycle</div>
+          <div class="skill-item__desc">Every email moves through: queued &rarr; sending &rarr; delivered &rarr; opened &rarr; clicked &rarr; replied (or bounced/failed). Full timestamp trail.</div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- DATABASE ARCHITECTURE -->
+<section>
+  <div class="container">
+    <span class="section-label reveal">Under the Hood</span>
+    <h2 class="section-title reveal">5 Production Tables</h2>
+    <p class="section-subtitle reveal">Purpose-built schema for email lifecycle tracking, template management, and pre-aggregated analytics.</p>
+
+    <div class="stats-grid" style="grid-template-columns:repeat(auto-fit,minmax(200px,1fr))">
+      <div class="glass stat-card reveal">
+        <div class="stat-card__number gradient-text" style="font-size:clamp(1.2rem,2.5vw,1.5rem)">nova_templates</div>
+        <div class="stat-card__label">14 columns &mdash; Email template library with variables, categories, and performance stats</div>
+        <div class="stat-card__bar"></div>
+      </div>
+      <div class="glass stat-card reveal reveal-delay-1">
+        <div class="stat-card__number gradient-text" style="font-size:clamp(1.2rem,2.5vw,1.5rem)">nova_sequences</div>
+        <div class="stat-card__label">13 columns &mdash; Multi-step sequences with JSONB steps, enrollment and completion tracking</div>
+        <div class="stat-card__bar"></div>
+      </div>
+      <div class="glass stat-card reveal reveal-delay-2">
+        <div class="stat-card__number gradient-text" style="font-size:clamp(1.2rem,2.5vw,1.5rem)">nova_campaigns</div>
+        <div class="stat-card__label">28 columns &mdash; Full campaign config with send settings, progress stats, and cost tracking</div>
+        <div class="stat-card__bar"></div>
+      </div>
+      <div class="glass stat-card reveal reveal-delay-3">
+        <div class="stat-card__number gradient-text" style="font-size:clamp(1.2rem,2.5vw,1.5rem)">nova_emails</div>
+        <div class="stat-card__label">33 columns &mdash; Individual email records with complete lifecycle tracking</div>
+        <div class="stat-card__bar"></div>
+      </div>
+      <div class="glass stat-card reveal">
+        <div class="stat-card__number gradient-text" style="font-size:clamp(1.2rem,2.5vw,1.5rem)">nova_daily_metrics</div>
+        <div class="stat-card__label">15 columns &mdash; Pre-aggregated daily stats for fast chart rendering</div>
+        <div class="stat-card__bar"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PREREQUISITES -->
+<section>
+  <div class="container">
+    <span class="section-label reveal">What You Need</span>
+    <h2 class="section-title reveal">Getting Started</h2>
+    <p class="section-subtitle reveal">Three prerequisites. Setup takes 15 minutes.</p>
+
+    <div class="stats-grid">
+      <div class="glass stat-card reveal">
+        <div class="stat-card__number gradient-text">1</div>
+        <div class="stat-card__label">ClawBuddy Kit instance running with Supabase</div>
+        <div class="stat-card__bar"></div>
+      </div>
+      <div class="glass stat-card reveal reveal-delay-1">
+        <div class="stat-card__number gradient-text">2</div>
+        <div class="stat-card__label">Resend account with API key</div>
+        <div class="stat-card__bar"></div>
+      </div>
+      <div class="glass stat-card reveal reveal-delay-2">
+        <div class="stat-card__number gradient-text">3</div>
+        <div class="stat-card__label">Verified sending domain (DNS records)</div>
+        <div class="stat-card__bar"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section style="padding-bottom:120px">
+  <div class="container" style="text-align:center">
+    <div class="glass reveal" style="padding:64px 40px;max-width:720px;margin:0 auto;position:relative;overflow:hidden">
+      <div style="position:absolute;top:-80px;left:50%;transform:translateX(-50%);width:400px;height:400px;border-radius:50%;background:radial-gradient(circle,rgba(139,92,246,0.08),transparent 70%);pointer-events:none"></div>
+      <h2 class="section-title" style="margin-bottom:16px;position:relative">6 Views. 5 Tables. 1 AI Employee.</h2>
+      <p style="color:var(--text-secondary);font-size:1rem;max-width:520px;margin:0 auto 32px;line-height:1.7;position:relative">
+        Nova handles every email from template to meeting booked. Set up takes 15 minutes &mdash; your agent reads the module doc and builds everything automatically.
+      </p>
+      <a href="#features" class="btn btn--primary" style="position:relative">Get Started</a>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <p class="footer__brand">Built by <strong>Mani Kanasani</strong> &middot; Vertical Systems &middot; Powered by <strong>ClawBuddy</strong></p>
+    <div class="footer__divider"></div>
+    <p class="footer__legal">&copy; 2026 Vertical Systems. All rights reserved.</p>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var els=document.querySelectorAll('.reveal');if(!els.length)return;
+  var observer=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(entry.isIntersecting){entry.target.classList.add('visible');observer.unobserve(entry.target)}})},{threshold:0.1,rootMargin:'0px 0px -40px 0px'});
+  els.forEach(function(el){observer.observe(el)});
+})();
+</script>
+</body>
+</html>
