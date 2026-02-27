@@ -111,7 +111,7 @@ export default function Auth() {
             Claw<span className="text-primary">Buddy</span>
           </h1>
           <p className="text-muted-foreground font-exo">
-            AI Task Management
+            Mission Control for AI Agents
           </p>
         </motion.div>
 
