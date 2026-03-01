@@ -37,6 +37,7 @@ import { OpsCenterPage } from "@/pages/OpsCenterPage";
 import { OpsAppPage } from "@/pages/OpsAppPage";
 import { AutomationsPage } from "@/pages/AutomationsPage";
 import { AiEmployeesPage } from "@/pages/AiEmployeesPage";
+import { ForgePage } from "@/pages/ForgePage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -77,6 +78,7 @@ const App = () => (
                 <Route path="/skills/factory/new" element={<ClaudeCodeSkillEditor />} />
                 <Route path="/skills/factory/:id" element={<SkillDetailPage />} />
                 <Route path="/ai-employees" element={<AiEmployeesPage />} />
+                <Route path="/forge" element={<ForgePage />} />
                 <Route path="/agent-teams" element={<AgentTeamsPage />} />
                 <Route path="/reports" element={<ReportsPage />} />
                 <Route path="/workspace" element={<WorkspacePage />} />

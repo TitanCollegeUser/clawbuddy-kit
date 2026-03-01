@@ -2,7 +2,7 @@ import { useOpsData } from '@/hooks/useOpsData';
 import type { OpsBlock } from '@/hooks/useOpsBlocks';
 import { Skeleton } from '@/components/ui/skeleton';
 import { motion } from 'framer-motion';
-import { Phone, Mail, Trophy, Zap, Bell } from 'lucide-react';
+import { Phone, Mail, Zap, Bell, Users } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { useMemo } from 'react';
 
@@ -11,7 +11,7 @@ interface ScoreboardState {
   calls_placed?: number;
   calls_answered?: number;
   conversations?: number;
-  meetings_booked?: number;
+  signups?: number;
   revenue?: number;
   cost?: number;
   emails_sent?: number;
@@ -109,12 +109,8 @@ export const OpsOutreachScoreboardBlock = ({ block, appId }: { block: OpsBlock; 
   const totalRevenue = (d.total_revenue as number) || 0;
   const totalCost = (d.total_cost as number) || 0;
   const campaignStarted = d.campaign_started_at as string;
-  const totalMeetings = ((lex.meetings_booked || 0) + (nova.meetings_booked || 0));
+  const totalSignups = ((lex.signups || 0) + (nova.signups || 0));
 
-  const lexRevenue = lex.revenue || 0;
-  const novaRevenue = nova.revenue || 0;
-  const lexLeading = lexRevenue > novaRevenue;
-  const novaLeading = novaRevenue > lexRevenue;
   const lexActive = lex.status === 'active';
   const novaActive = nova.status === 'active';
 
@@ -124,12 +120,12 @@ export const OpsOutreachScoreboardBlock = ({ block, appId }: { block: OpsBlock; 
         <h3 className="font-orbitron text-xl font-semibold uppercase tracking-wider text-foreground mb-4">{block.title}</h3>
       )}
 
-      {/* Main Scoreboard */}
+      {/* Team Scoreboard — Lex & Nova working together */}
       <div className="grid grid-cols-[1fr_auto_1fr] gap-0 rounded-xl overflow-hidden backdrop-blur-xl bg-white/[0.03] border border-white/[0.08]">
-        {/* Lex Side */}
+        {/* Lex Side — Phone */}
         <motion.div
           whileHover={{ backgroundColor: 'rgba(59,130,246,0.04)' }}
-          className={`p-5 transition-shadow duration-500 ${lexLeading ? 'shadow-[inset_0_0_40px_rgba(59,130,246,0.12)]' : ''}`}
+          className="p-5 transition-shadow duration-500"
         >
           <div className="flex items-center gap-3 mb-4">
             <div
@@ -141,40 +137,42 @@ export const OpsOutreachScoreboardBlock = ({ block, appId }: { block: OpsBlock; 
               <h4 className="font-orbitron text-base font-bold text-blue-400">LEX</h4>
               <StatusDot status={lex.status || 'idle'} />
             </div>
-            {lexLeading && (
-              <motion.div animate={{ scale: [1, 1.15, 1] }} transition={{ repeat: Infinity, duration: 2 }} className="ml-auto">
-                <Trophy className="w-5 h-5 text-amber-400" style={{ filter: 'drop-shadow(0 0 6px rgba(251,191,36,0.5))' }} />
-              </motion.div>
-            )}
           </div>
           <div className="space-y-0.5">
             <StatCounter label="Calls Placed" value={lex.calls_placed || 0} color="text-blue-400" />
             <StatCounter label="Answered" value={lex.calls_answered || 0} color="text-blue-400" />
             <StatCounter label="Conversations" value={lex.conversations || 0} color="text-blue-400" />
-            <StatCounter label="Meetings" value={lex.meetings_booked || 0} color="text-emerald-400" glow />
+            <StatCounter label="Signups" value={lex.signups || 0} color="text-emerald-400" glow />
             <StatCounter label="Revenue" value={`$${(lex.revenue || 0).toLocaleString()}`} color="text-emerald-400" glow />
             <StatCounter label="Cost" value={`$${(lex.cost || 0).toFixed(2)}`} color="text-muted-foreground" />
           </div>
         </motion.div>
 
-        {/* Center Divider */}
+        {/* Center — Shared Team Metrics */}
         <div className="relative flex flex-col items-center justify-center px-6 gap-3">
-          <div className="absolute inset-0 w-px left-1/2 -translate-x-1/2 bg-gradient-to-b from-blue-500/40 via-white/[0.08] to-violet-500/40" />
-          
-          {totalMeetings > 0 && (
+          <div className="absolute inset-0 w-px left-1/2 -translate-x-1/2 bg-gradient-to-b from-blue-500/20 via-white/[0.06] to-violet-500/20" />
+
+          {totalSignups > 0 && (
             <div className="relative z-10">
               <ConversionBell />
             </div>
           )}
 
-          <div className="relative z-10 backdrop-blur-sm bg-white/[0.04] rounded-lg px-3 py-1">
-            <p className="font-orbitron text-xs font-bold text-muted-foreground tracking-widest">VS</p>
+          <div className="relative z-10 backdrop-blur-sm bg-white/[0.04] rounded-lg px-3 py-1.5 flex items-center gap-1.5">
+            <Users className="w-3.5 h-3.5 text-emerald-400" />
+            <p className="font-orbitron text-xs font-bold text-emerald-400 tracking-wider">TEAM</p>
           </div>
 
           <div className="relative text-center z-10">
             <p className="text-xs text-muted-foreground uppercase tracking-wider">Revenue</p>
             <p className="font-mono text-lg font-bold text-emerald-400" style={{ textShadow: '0 0 10px rgba(52,211,153,0.4)' }}>
               ${totalRevenue.toLocaleString()}
+            </p>
+          </div>
+          <div className="relative text-center z-10">
+            <p className="text-xs text-muted-foreground uppercase tracking-wider">Signups</p>
+            <p className="font-mono text-lg font-bold text-amber-400" style={{ textShadow: '0 0 10px rgba(251,191,36,0.4)' }}>
+              {totalSignups}
             </p>
           </div>
           <div className="relative text-center z-10">
@@ -189,10 +187,10 @@ export const OpsOutreachScoreboardBlock = ({ block, appId }: { block: OpsBlock; 
           </div>
         </div>
 
-        {/* Nova Side */}
+        {/* Nova Side — Email */}
         <motion.div
           whileHover={{ backgroundColor: 'rgba(139,92,246,0.04)' }}
-          className={`p-5 transition-shadow duration-500 ${novaLeading ? 'shadow-[inset_0_0_40px_rgba(139,92,246,0.12)]' : ''}`}
+          className="p-5 transition-shadow duration-500"
         >
           <div className="flex items-center gap-3 mb-4">
             <div
@@ -204,18 +202,13 @@ export const OpsOutreachScoreboardBlock = ({ block, appId }: { block: OpsBlock; 
               <h4 className="font-orbitron text-base font-bold text-violet-400">NOVA</h4>
               <StatusDot status={nova.status || 'idle'} />
             </div>
-            {novaLeading && (
-              <motion.div animate={{ scale: [1, 1.15, 1] }} transition={{ repeat: Infinity, duration: 2 }} className="ml-auto">
-                <Trophy className="w-5 h-5 text-amber-400" style={{ filter: 'drop-shadow(0 0 6px rgba(251,191,36,0.5))' }} />
-              </motion.div>
-            )}
           </div>
           <div className="space-y-0.5">
             <StatCounter label="Emails Sent" value={nova.emails_sent || 0} color="text-violet-400" />
             <StatCounter label="Opened" value={nova.emails_opened || 0} color="text-violet-400" />
             <StatCounter label="Clicked" value={nova.links_clicked || 0} color="text-violet-400" />
             <StatCounter label="Replies" value={nova.replies || 0} color="text-violet-400" />
-            <StatCounter label="Meetings" value={nova.meetings_booked || 0} color="text-emerald-400" glow />
+            <StatCounter label="Signups" value={nova.signups || 0} color="text-emerald-400" glow />
             <StatCounter label="Revenue" value={`$${(nova.revenue || 0).toLocaleString()}`} color="text-emerald-400" glow />
             <StatCounter label="Cost" value={`$${(nova.cost || 0).toFixed(2)}`} color="text-muted-foreground" />
           </div>

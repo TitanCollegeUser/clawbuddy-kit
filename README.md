@@ -46,8 +46,8 @@ supabase db push
 supabase secrets set CLAWBUDDY_WEBHOOK_SECRET=$(openssl rand -hex 32)
 supabase secrets set AI_TASKS_API_KEY=$(openssl rand -hex 32)
 
-# Deploy all 24 edge functions
-for fn in ai-tasks automation-runner sherlock-brain morning-digest evening-report midday-prep competitor-intel intelligence-sync browser-research calendar-sync goal-analyzer report-webhook list-offices manage-office-agent create-office-task office-agent-status reset-office upload-office-deliverable activate-license millis-proxy lexa-webhook lexa-precall lexa-campaign-runner make-proxy; do
+# Deploy all 25 edge functions
+for fn in ai-tasks automation-runner sherlock-brain morning-digest evening-report midday-prep competitor-intel intelligence-sync browser-research calendar-sync goal-analyzer report-webhook list-offices manage-office-agent create-office-task office-agent-status reset-office upload-office-deliverable activate-license millis-proxy lexa-webhook lexa-precall lexa-campaign-runner make-proxy forge-analyzer; do
   supabase functions deploy $fn --no-verify-jwt
 done
 ```
@@ -118,7 +118,7 @@ clawbuddy-kit/
 │           └── Ops*.tsx           # 18 generic blocks (table, feed, kanban, etc.)
 ├── public/                  # Static assets
 ├── supabase/
-│   ├── functions/           # 24 edge functions
+│   ├── functions/           # 25 edge functions
 │   │   ├── ai-tasks/        # Core API (tasks, logs, insights, questions, etc.)
 │   │   ├── automation-runner/   # Scheduled automation orchestrator
 │   │   ├── sherlock-brain/  # Self-improving AI brain
@@ -128,8 +128,10 @@ clawbuddy-kit/
 │   │   ├── competitor-intel/ # Competitive intelligence
 │   │   ├── browser-research/ # AI web research
 │   │   ├── calendar-sync/   # Google Calendar bridge
-│   │   └── ... (+ 9 more)
-│   └── migrations/          # 51 SQL migrations (full schema)
+│   │   ├── make-proxy/       # Make.com automation bridge
+│   │   ├── forge-analyzer/   # AI content analyzer (Forge)
+│   │   └── ... (+ 8 more)
+│   └── migrations/          # 52 SQL migrations (full schema)
 ├── modules/                 # Module instruction docs
 │   ├── MODULE-TEMPLATE.md       # Template for creating new modules
 │   ├── meeting-intelligence.md  # Meeting Intelligence (PepperPots) module

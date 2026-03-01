@@ -56,6 +56,7 @@ FUNCTIONS=(
   lexa-precall
   lexa-campaign-runner
   make-proxy
+  forge-analyzer
 )
 
 for fn in "${FUNCTIONS[@]}"; do

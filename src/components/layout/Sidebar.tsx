@@ -1,4 +1,4 @@
-import { LayoutDashboard, Kanban, MessageCircleQuestion, ScrollText, ChevronLeft, ChevronRight, Puzzle, Target, Brain, Users, FileText, Settings, Building2, FlaskConical, Radar, CalendarClock, Briefcase } from 'lucide-react';
+import { LayoutDashboard, Kanban, MessageCircleQuestion, ScrollText, ChevronLeft, ChevronRight, Puzzle, Target, Brain, Users, FileText, Settings, Building2, FlaskConical, Radar, CalendarClock, Briefcase, Hammer } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { usePendingQuestionsCount } from '@/hooks/useAiQuestions';
 import { useUnreadLogCount } from '@/hooks/useAiLog';
@@ -15,13 +15,14 @@ import { motion } from 'framer-motion';
 
 const navItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
+  { title: 'AI Employees', url: '/ai-employees', icon: Briefcase },
+  { title: 'Forge', url: '/forge', icon: Hammer },
   { title: 'Board', url: '/board', icon: Kanban, showNeedsInputBadge: true },
   { title: 'Ops Center', url: '/ops-center', icon: Radar },
-  { title: 'AI Employees', url: '/ai-employees', icon: Briefcase },
   { title: 'Automations', url: '/automations', icon: CalendarClock, showAutomationBadge: true },
   { title: 'Goals Lab', url: '/goals', icon: Target },
   { title: 'Identity', url: '/identity', icon: Brain },
-  
+
   { title: 'AI Log', url: '/log', icon: ScrollText, showLogBadge: true },
   { title: 'Questions', url: '/questions', icon: MessageCircleQuestion, showBadge: true },
   { title: 'Skill Factory', url: '/skills/factory', icon: FlaskConical },

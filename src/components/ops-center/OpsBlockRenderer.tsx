@@ -44,6 +44,8 @@ import { OpsLexaAnalyticsBlock } from './blocks/OpsLexaAnalyticsBlock';
 import { OpsLexaTranscriptsBlock } from './blocks/OpsLexaTranscriptsBlock';
 import { OpsLexaCampaignsBlock } from './blocks/OpsLexaCampaignsBlock';
 import { OpsLexaLeadsBlock } from './blocks/OpsLexaLeadsBlock';
+// Enrichment blocks
+import { OpsEnrichmentDashboardBlock } from './blocks/OpsEnrichmentDashboardBlock';
 // Nova Email AI blocks
 import { OpsNovaDashboardBlock } from './blocks/OpsNovaDashboardBlock';
 import { OpsNovaOutboxBlock } from './blocks/OpsNovaOutboxBlock';
@@ -133,6 +135,9 @@ const renderBlock = (block: OpsBlock, appId: string) => {
     case 'nova_sequences': return <OpsNovaSequencesBlock {...props} />;
     case 'nova_campaigns': return <OpsNovaCampaignsBlock {...props} />;
     case 'nova_analytics': return <OpsNovaAnalyticsBlock {...props} />;
+    // Enrichment blocks
+    case 'enrichment_dashboard': return <OpsEnrichmentDashboardBlock {...props} />;
+    case 'enrichment_feed': return <OpsEnrichmentDashboardBlock {...props} />;
     case 'office':
       return (
         <div className="glass rounded-xl p-6 text-center">

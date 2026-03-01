@@ -16,6 +16,7 @@ export default {
       fontFamily: {
         orbitron: ['Orbitron', 'sans-serif'],
         exo: ['Exo 2', 'sans-serif'],
+        jetbrains: ['JetBrains Mono', 'monospace'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -62,6 +63,17 @@ export default {
         glow: {
           primary: "hsl(var(--glow-primary))",
           secondary: "hsl(var(--glow-secondary))",
+        },
+        forge: {
+          skill: "hsl(var(--forge-skill))",
+          "ops-app": "hsl(var(--forge-ops-app))",
+          automation: "hsl(var(--forge-automation))",
+          "edge-function": "hsl(var(--forge-edge-function))",
+          tool: "hsl(var(--forge-tool))",
+          "make-scenario": "hsl(var(--forge-make-scenario))",
+          simple: "hsl(var(--forge-simple))",
+          moderate: "hsl(var(--forge-moderate))",
+          complex: "hsl(var(--forge-complex))",
         },
       },
       borderRadius: {

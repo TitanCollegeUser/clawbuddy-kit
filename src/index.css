@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Exo+2:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Exo+2:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -51,6 +51,24 @@
     /* Glass effect */
     --glass-bg: 0 0% 100% / 0.03;
     --glass-border: 0 0% 100% / 0.08;
+
+    /* Forge-specific tokens */
+    --forge-surface: 222 47% 11% / 0.7;
+    --forge-glass-border: 0 0% 100% / 0.06;
+    --forge-glass-border-hover: 38 92% 50% / 0.2;
+
+    /* Forge type colors */
+    --forge-skill: 217 91% 60%;
+    --forge-ops-app: 271 81% 56%;
+    --forge-automation: 48 96% 53%;
+    --forge-edge-function: 142 71% 45%;
+    --forge-tool: 25 95% 53%;
+    --forge-make-scenario: 330 81% 60%;
+
+    /* Forge complexity */
+    --forge-simple: 160 64% 52%;
+    --forge-moderate: 45 93% 56%;
+    --forge-complex: 0 90% 71%;
   }
 }
 
@@ -69,7 +87,94 @@
   }
 }
 
+@layer utilities {
+  .font-jetbrains {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
 @layer components {
+  /* Forge page scope — overrides primary to amber within Forge */
+  .forge-scope {
+    --primary: 38 92% 50%;
+    --primary-foreground: 0 0% 0%;
+    --ring: 38 92% 50%;
+  }
+
+  /* Forge glass cards */
+  .forge-glass {
+    background: hsl(var(--forge-surface));
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--forge-glass-border));
+    border-radius: 16px;
+    transition: all 0.3s ease;
+  }
+  .forge-glass:hover {
+    border-color: hsl(var(--forge-glass-border-hover));
+    box-shadow: 0 0 30px hsl(38 92% 50% / 0.08), 0 8px 32px hsl(0 0% 0% / 0.3);
+  }
+
+  .forge-glass-static {
+    background: hsl(var(--forge-surface));
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid hsl(var(--forge-glass-border));
+    border-radius: 16px;
+  }
+
+  /* Forge amber glow */
+  .glow-amber {
+    box-shadow: 0 0 20px hsl(38 92% 50% / 0.15);
+  }
+  .glow-amber-strong {
+    box-shadow: 0 0 30px hsl(38 92% 50% / 0.3), inset 0 0 20px hsl(38 92% 50% / 0.05);
+  }
+
+  /* Forge input */
+  .forge-input {
+    @apply bg-white/[0.03] border border-white/[0.06] rounded-xl text-foreground placeholder:text-muted-foreground/50;
+    transition: all 0.2s ease;
+  }
+  .forge-input:focus {
+    border-color: hsl(38 92% 50% / 0.4);
+    box-shadow: 0 0 0 2px hsl(38 92% 50% / 0.1);
+    outline: none;
+  }
+
+  /* Forge primary button */
+  .forge-btn-primary {
+    @apply bg-primary text-primary-foreground font-semibold rounded-xl px-5 py-2.5 transition-all duration-300;
+  }
+  .forge-btn-primary:hover {
+    box-shadow: 0 0 20px hsl(38 92% 50% / 0.3);
+    filter: brightness(1.1);
+  }
+  .forge-btn-primary:disabled {
+    @apply opacity-40 cursor-not-allowed;
+    box-shadow: none;
+    filter: none;
+  }
+
+  /* Forge tabs */
+  .forge-tab {
+    @apply relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 cursor-pointer;
+    @apply bg-white/[0.03] border border-white/[0.06] text-muted-foreground;
+  }
+  .forge-tab:hover {
+    @apply bg-white/[0.06] border-white/[0.1];
+  }
+  .forge-tab-active {
+    @apply bg-primary/[0.15] border-primary/30 text-primary;
+    box-shadow: 0 0 15px hsl(38 92% 50% / 0.15);
+  }
+
+  /* Forge divider */
+  .forge-divider {
+    @apply h-px w-full;
+    background: linear-gradient(to right, transparent, hsl(38 92% 50% / 0.2), transparent);
+  }
+
   /* Glassmorphism */
   .glass {
     @apply bg-white/[0.03] backdrop-blur-xl border border-white/[0.08];
@@ -325,4 +430,24 @@
   .scrollbar-custom::-webkit-scrollbar-thumb:hover {
     background: hsl(0 72% 51% / 0.5);
   }
+}
+
+/* Forge animations (outside @layer for global scope) */
+@keyframes forge-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.forge-shimmer {
+  background: linear-gradient(90deg, transparent 0%, hsl(38 92% 50% / 0.08) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: forge-shimmer 2s ease-in-out infinite;
+}
+
+@keyframes forge-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.forge-pulse {
+  animation: forge-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }

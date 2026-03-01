@@ -1,7 +1,7 @@
 # ClawBuddy Deployment & Integration Guide v3.1.0
 
 > Last updated: February 27, 2026
-> Source of truth: Audited directly from `ai-tasks/index.ts` (4,852 lines), 24 Edge Functions, and 65 migrations.
+> Source of truth: Audited directly from `ai-tasks/index.ts` (4,852 lines), 25 Edge Functions, and 66 migrations.
 > Supabase project: `YOUR_PROJECT_REF`
 
 ---
@@ -73,7 +73,7 @@ supabase db push
 supabase secrets set CLAWBUDDY_WEBHOOK_SECRET=$(openssl rand -hex 32)
 supabase secrets set AI_TASKS_API_KEY=$(openssl rand -hex 32)
 
-# Deploy all 24 edge functions
+# Deploy all 25 edge functions
 for fn in \
   ai-tasks automation-runner sherlock-brain \
   morning-digest evening-report midday-prep competitor-intel \
@@ -83,7 +83,7 @@ for fn in \
   office-agent-status reset-office upload-office-deliverable \
   activate-license millis-proxy \
   lexa-webhook lexa-precall lexa-campaign-runner \
-  make-proxy; do
+  make-proxy forge-analyzer; do
   supabase functions deploy "$fn" --no-verify-jwt
 done
 ```
@@ -1553,6 +1553,77 @@ Proxy to Make.com REST API. Lets any authenticated agent run Make.com scenarios,
 ```
 
 **Env vars required:** `MAKE_API_TOKEN`, `MAKE_TEAM_ID`
+
+### forge-analyzer
+
+```
+POST {CLAWBUDDY_API_URL}/functions/v1/forge-analyzer
+x-webhook-secret: {CLAWBUDDY_WEBHOOK_SECRET}
+```
+
+AI-powered content analyzer for the Forge feature. Takes YouTube transcripts, API docs, MCP specs, URLs, or any text and identifies buildable skills, tools, OpsCenter apps, automations, and Make.com scenarios.
+
+**Auth:** JWT (frontend) or webhook secret (agents) — same dual-auth as make-proxy.
+
+**Actions:**
+
+| Action | Required Fields | Description |
+|--------|----------------|-------------|
+| `analyze` | `input_type`, `content` or `url` | Analyze content with AI. Returns buildable items with complexity, recommended agent/model, build steps. |
+| `list` | (none) | List past analyses. Optional `limit` (default 20). |
+| `get` | `analysis_id` | Get a specific analysis by ID. |
+| `video_info` | `url` | Get YouTube video metadata (title, author, videoId) via oEmbed. |
+
+**Input types:** `transcript`, `url`, `api_docs`, `mcp_spec`, `text`
+
+**Examples:**
+
+```json
+// Analyze a pasted transcript with YouTube URL for metadata enrichment
+{"action": "analyze", "input_type": "transcript", "content": "In this video we build...", "url": "https://youtube.com/watch?v=abc123"}
+
+// Analyze a URL (content fetched automatically)
+{"action": "analyze", "input_type": "url", "url": "https://docs.stripe.com/api"}
+
+// Analyze pasted API docs
+{"action": "analyze", "input_type": "api_docs", "content": "POST /v1/customers..."}
+
+// List past analyses
+{"action": "list", "limit": 10}
+
+// Get YouTube video metadata
+{"action": "video_info", "url": "https://youtube.com/watch?v=abc123"}
+```
+
+**Response (analyze):**
+```json
+{
+  "id": "uuid",
+  "status": "complete",
+  "analysis": {
+    "summary": "Brief overview",
+    "source_type": "API documentation",
+    "items": [
+      {
+        "name": "stripe-webhook-handler",
+        "type": "edge_function",
+        "description": "Handles Stripe webhook events",
+        "complexity": "moderate",
+        "recommended_agent": "Sherlock",
+        "recommended_model": "claude-opus-4-6",
+        "build_steps": ["Step 1", "Step 2"],
+        "apis_needed": ["Stripe API"],
+        "estimated_effort": "2 hours",
+        "priority": "high"
+      }
+    ],
+    "total_items": 1,
+    "key_technologies": ["Stripe", "Webhooks"]
+  }
+}
+```
+
+**Database:** `forge_analyses` table. **Env vars required:** `OPENAI_API_KEY`
 
 ### activate-license
 

@@ -506,13 +506,14 @@ async function logActivity(
   taskId: string | null,
   actionType: string,
   actionDetails?: Record<string, unknown>,
-  comment?: string
+  comment?: string,
+  actorName?: string
 ) {
   try {
     const { error } = await supabase.from("activity_log").insert([{
       task_id: taskId,
       action_type: actionType,
-      actor_name: "Ray",
+      actor_name: actorName || "AI",
       action_details: actionDetails ? JSON.parse(JSON.stringify(actionDetails)) : null,
       comment: comment || null,
     }]);
@@ -529,7 +530,9 @@ async function updateBujjiLastSeen(
   // deno-lint-ignore no-explicit-any
   supabase: any,
   userId: string | null,
-  agentId: string | null = null
+  agentId: string | null = null,
+  agentName: string | null = null,
+  agentEmoji: string | null = null
 ) {
   if (!userId) return;
   try {
@@ -548,9 +551,14 @@ async function updateBujjiLastSeen(
           .update({ last_seen: new Date().toISOString() })
           .eq("id", existing.id);
       } else {
-        await supabase
-          .from("ai_status")
-          .insert({ user_id: userId, agent_id: agentId, last_seen: new Date().toISOString(), is_online: true });
+        // Include agent_name and agent_emoji to avoid DB defaults creating "Ray" ghosts
+        const insertRow: Record<string, unknown> = {
+          user_id: userId, agent_id: agentId,
+          last_seen: new Date().toISOString(), is_online: true
+        };
+        if (agentName) insertRow.agent_name = agentName;
+        if (agentEmoji) insertRow.agent_emoji = agentEmoji;
+        await supabase.from("ai_status").insert(insertRow);
       }
     } else {
       // Legacy: update any status row for this user without agent_id
@@ -633,15 +641,18 @@ Deno.serve(async (req) => {
     const webhookSecret = req.headers.get("x-webhook-secret");
 
     // Allow authenticated users for certain request types without API key
-    const isSkillSubmission = requestType === "skill" && 
+    const isSkillSubmission = requestType === "skill" &&
       ["submit", "review", "create", "update", "delete"].includes(body.action as string);
     const isRawReportAction = requestType === "raw_report";
-    const allowsUserAuth = isSkillSubmission || isRawReportAction;
+    const isForgeAction = ["task", "assignee", "log", "question", "insight", "report", "status"].includes(requestType);
+    const allowsUserAuth = isSkillSubmission || isRawReportAction || isForgeAction;
     // Allow webhook secret auth for ALL request types (Ray's primary auth method)
     const allowsWebhookAuth = true;
     
     let userId: string | null = null;
     let agentId: string | null = null;
+    let authAgentName: string | null = null;
+    let authAgentEmoji: string | null = null;
     let supabase;
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -653,14 +664,24 @@ Deno.serve(async (req) => {
       // 1. Check ai_agents table
       const { data: agentData } = await supabase
         .from("ai_agents")
-        .select("id, user_id")
+        .select("id, user_id, name")
         .eq("webhook_secret", webhookSecret)
         .maybeSingle();
 
       if (agentData) {
         userId = agentData.user_id;
         agentId = agentData.id;
-        console.log(`Authenticated via ai_agents, user: ${userId}, agent: ${agentId}, type: ${requestType}`);
+        authAgentName = agentData.name || null;
+        // Get emoji from ai_status (not stored in ai_agents)
+        if (agentId) {
+          const { data: statusRow } = await supabase
+            .from("ai_status")
+            .select("agent_emoji")
+            .eq("agent_id", agentId)
+            .maybeSingle();
+          if (statusRow?.agent_emoji) authAgentEmoji = statusRow.agent_emoji;
+        }
+        console.log(`Authenticated via ai_agents, user: ${userId}, agent: ${agentId}, name: ${authAgentName}, type: ${requestType}`);
       } else {
         // 2. Fallback: check users table (legacy)
         const { data: userData, error: userError } = await supabase
@@ -715,11 +736,12 @@ Deno.serve(async (req) => {
     }
 
     // Update AI assistant's last seen on every request
-    await updateBujjiLastSeen(supabase, userId, agentId);
+    await updateBujjiLastSeen(supabase, userId, agentId, authAgentName, authAgentEmoji);
 
     // Extract agent identity for log attribution
-    const logAgentName = (body.agent_name as string) || "Ray";
-    const logAgentEmoji = (body.agent_emoji as string) || (logAgentName === "Ray" ? "⚡" : "🤖");
+    // Priority: body.agent_name > authAgentName (from ai_agents table) > "AI"
+    const logAgentName = (body.agent_name as string) || authAgentName || "AI";
+    const logAgentEmoji = (body.agent_emoji as string) || authAgentEmoji || "🤖";
 
     // ============ TASK QUEUE MANAGEMENT ============
     // For Ray/OpenClaw to consume tasks via Realtime + Polling
@@ -1552,8 +1574,8 @@ Deno.serve(async (req) => {
             message: message.trim(),
             category: logCategory,
             is_read: false,
-            agent_name: body.agent_name || logAgentName || "Ray",
-            agent_emoji: body.agent_emoji || "⚡",
+            agent_name: logAgentName,
+            agent_emoji: logAgentEmoji,
           })
           .select()
           .single();
@@ -3112,19 +3134,35 @@ Waiting for user to fix and resubmit.`;
           contextObj.processed_prompt = promptTemplate.replace(/\{\{raw_data\}\}/g, JSON.stringify(data.raw_data, null, 2));
         }
 
-        // Create ai_questions entry
-        await supabase.from("ai_questions").insert({
-          user_id: userId,
-          question: promptTemplate
-            ? `Process raw report from "${data.source}" using function "${functionName}":\n\n${promptTemplate.replace(/\{\{raw_data\}\}/g, JSON.stringify(data.raw_data, null, 2))}`
-            : `Process raw report from "${data.source}" (${data.report_type})?`,
-          question_type: "approval",
-          context: JSON.stringify(contextObj),
-          priority: "high",
-          status: "pending",
-          agent_name: logAgentName,
-          agent_emoji: logAgentEmoji,
-        });
+        // Only create approval question if NOT auto-processing
+        // When auto_process is true (from webhook endpoint setting), skip the approval
+        const isAutoProcess = body.auto_process === true;
+
+        if (!isAutoProcess) {
+          // Manual submission — ask for approval
+          await supabase.from("ai_questions").insert({
+            user_id: userId,
+            question: promptTemplate
+              ? `Process raw report from "${data.source}" using function "${functionName}":\n\n${promptTemplate.replace(/\{\{raw_data\}\}/g, JSON.stringify(data.raw_data, null, 2))}`
+              : `Process raw report from "${data.source}" (${data.report_type})?`,
+            question_type: "approval",
+            context: JSON.stringify(contextObj),
+            priority: "high",
+            status: "pending",
+            agent_name: logAgentName,
+            agent_emoji: logAgentEmoji,
+          });
+        } else {
+          // Auto-process — log it but don't ask for approval
+          await supabase.from("ai_log").insert({
+            user_id: userId,
+            message: `⚡ Auto-processing raw report from "${data.source}"${functionName ? ` using function "${functionName}"` : ""} — approval skipped (auto_process enabled)`,
+            category: "observation",
+            is_read: false,
+            agent_name: logAgentName,
+            agent_emoji: logAgentEmoji,
+          });
+        }
 
         console.log(`Raw report ${rawReportId} submitted for processing${functionName ? ` with function "${functionName}"` : ""}`);
         return new Response(
@@ -3435,6 +3473,54 @@ Waiting for user to fix and resubmit.`;
             task_id: task.id,
             estimated_cost: estimated_cost,
           });
+        }
+
+        // --- AUTO-ASSIGN for API-created tasks ---
+        // Eliminates the recurring "unassigned task" problem by automatically
+        // assigning the creating agent + the task owner when created via API.
+        try {
+          const effectiveAgentName = (body.agent_name as string) || authAgentName;
+          const autoAssignNames: string[] = [];
+
+          if (effectiveAgentName) {
+            autoAssignNames.push(effectiveAgentName);
+          }
+
+          // Look up the user's display name
+          if (userId) {
+            const { data: ownerUser } = await supabase
+              .from("users")
+              .select("name")
+              .eq("id", userId)
+              .maybeSingle();
+            if (ownerUser?.name) {
+              autoAssignNames.push(ownerUser.name);
+            }
+          }
+
+          if (autoAssignNames.length > 0) {
+            const assignees = await lookupUsersByNames(supabase, autoAssignNames);
+            if (assignees.length > 0) {
+              const assignments = assignees.map(u => ({
+                task_id: task.id,
+                user_id: u.id,
+              }));
+              await supabase
+                .from("task_assignees")
+                .upsert(assignments, { onConflict: "task_id,user_id", ignoreDuplicates: true });
+
+              await logActivity(
+                supabase,
+                task.id,
+                "assignees_added",
+                { names: assignees.map(u => u.name), auto_assigned: true }
+              );
+              console.log(`Auto-assigned task ${task.id} to: ${assignees.map(u => u.name).join(", ")}`);
+            }
+          }
+        } catch (autoAssignErr) {
+          // Non-fatal — task was created successfully, just log the failure
+          console.error("Auto-assign failed (non-fatal):", autoAssignErr);
         }
 
         console.log(`Task created with ID: ${task.id}`);
