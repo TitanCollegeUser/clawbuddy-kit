@@ -64,6 +64,18 @@ export default {
           primary: "hsl(var(--glow-primary))",
           secondary: "hsl(var(--glow-secondary))",
         },
+        ops: {
+          emerald: "hsl(160, 84%, 39%)",
+          teal: "hsl(174, 84%, 40%)",
+          lime: "hsl(84, 81%, 44%)",
+          amber: "hsl(45, 93%, 47%)",
+          red: "hsl(0, 84%, 60%)",
+          blue: "hsl(217, 91%, 60%)",
+          purple: "hsl(263, 70%, 50%)",
+          indigo: "hsl(239, 84%, 67%)",
+          violet: "hsl(258, 90%, 66%)",
+          gray: "hsl(220, 9%, 46%)",
+        },
         forge: {
           skill: "hsl(var(--forge-skill))",
           "ops-app": "hsl(var(--forge-ops-app))",

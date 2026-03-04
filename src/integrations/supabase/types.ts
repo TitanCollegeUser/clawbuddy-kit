@@ -1702,6 +1702,60 @@ export type Database = {
           },
         ]
       }
+      agent_comms: {
+        Row: {
+          id: string
+          user_id: string
+          from_agent: string
+          from_emoji: string | null
+          to_agent: string
+          message: string
+          message_type: string
+          priority: string
+          status: string
+          parent_id: string | null
+          related_task_id: string | null
+          metadata: Json
+          created_at: string
+          read_at: string | null
+          replied_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          from_agent: string
+          from_emoji?: string | null
+          to_agent: string
+          message: string
+          message_type?: string
+          priority?: string
+          status?: string
+          parent_id?: string | null
+          related_task_id?: string | null
+          metadata?: Json
+          created_at?: string
+          read_at?: string | null
+          replied_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          from_agent?: string
+          from_emoji?: string | null
+          to_agent?: string
+          message?: string
+          message_type?: string
+          priority?: string
+          status?: string
+          parent_id?: string | null
+          related_task_id?: string | null
+          metadata?: Json
+          created_at?: string
+          read_at?: string | null
+          replied_at?: string | null
+        }
+        Relationships: []
+      }
       pending_tasks: {
         Row: {
           action: string

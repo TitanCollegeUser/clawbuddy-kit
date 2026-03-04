@@ -1,4 +1,4 @@
-import { LayoutDashboard, Kanban, MessageCircleQuestion, ScrollText, ChevronLeft, ChevronRight, Puzzle, Target, Brain, Users, FileText, Settings, Building2, FlaskConical, Radar, CalendarClock, Briefcase, Hammer } from 'lucide-react';
+import { LayoutDashboard, Kanban, MessageCircleQuestion, ScrollText, ChevronLeft, ChevronRight, Puzzle, Target, Brain, Users, FileText, Settings, Building2, FlaskConical, Radar, CalendarClock, Monitor, Hammer } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { usePendingQuestionsCount } from '@/hooks/useAiQuestions';
 import { useUnreadLogCount } from '@/hooks/useAiLog';
@@ -15,7 +15,7 @@ import { motion } from 'framer-motion';
 
 const navItems = [
   { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
-  { title: 'AI Employees', url: '/ai-employees', icon: Briefcase },
+  { title: 'Command Center', url: '/command-center', icon: Monitor },
   { title: 'Forge', url: '/forge', icon: Hammer },
   { title: 'Board', url: '/board', icon: Kanban, showNeedsInputBadge: true },
   { title: 'Ops Center', url: '/ops-center', icon: Radar },

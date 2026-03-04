@@ -1756,6 +1756,165 @@ Self-improving automation health analyzer. Computes 24h/7d success rates, durati
 
 ---
 
+## Autonomous Dispatch Pipeline
+
+The autonomous dispatch pipeline enables agent-to-agent work handoff with full dashboard visibility. One agent (Ray) dispatches work, another agent (Sherlock/Claude Code) builds it, and the Command Center tracks every phase in real-time.
+
+### Architecture
+
+```
+Ray creates queue item (pending_tasks)
+  → Queue Poller picks up (every 30 seconds)
+  → Claims the item
+  → 8-Phase Handler activates:
+      CONTEXT → PLAN → TASK BOARD → BUILD → VALIDATE → HEAL → REPORT → CLOSE
+  → Dashboard animates in real-time (Autonomous Assignment panel)
+  → Telegram alerts every ~6 minutes
+  → Build History records result (8 green dots)
+  → Kanban task auto-created → Doing → Done
+```
+
+### Dispatch Payload (Queue Protocol)
+
+Dispatchers MUST use `pending_tasks` queue (NOT `agent_comms`):
+
+```json
+{
+  "request_type": "queue",
+  "action": "create",
+  "task_type": "build",
+  "action_name": "Build Client Onboarding Dashboard",
+  "priority": "high",
+  "payload": {
+    "prompt": "## Task\n...\n## Requirements\n...\n## Environment\n...\n## Deliverables\n...",
+    "dispatcher": "Ray",
+    "max_turns": 25,
+    "task_title": "Build Client Onboarding Dashboard"
+  }
+}
+```
+
+> ⚠️ **`action_name`** maps to the `action` column in `pending_tasks`. This is where the real task title goes. The queue poller's title fallback chain: `payload.task_title → payload.title → item.action → item.task_type`.
+
+### Dispatch Brief Standard
+
+Every dispatch MUST include these 4 sections in `payload.prompt`:
+
+| Section | Purpose |
+|---------|---------|
+| **Task** | What to build (one sentence) |
+| **Requirements** | Detailed spec — UI, features, behavior |
+| **Environment** | Working directory, env vars, dependencies |
+| **Deliverables** | Expected outputs (always includes README.md) |
+
+### 8-Phase Pipeline
+
+| Phase | fullName | % | What Happens |
+|-------|----------|---|-------------|
+| 1 | `CONTEXT` | 5% | Claim queue item, read requirements |
+| 2 | `PLAN` | 12% | Analyze approach |
+| 3 | `TASK BOARD` | 20% | Create Kanban task + assign |
+| 4 | `BUILD` | 25-90% | Launch Claude agent + heartbeat loop |
+| 5 | `VALIDATE` | 75% | Agent completes, validate results |
+| 6 | `HEAL` | — | Reserved for self-healing on failure |
+| 7 | `REPORT` | 90% | Generate build_summary insight |
+| 8 | `CLOSE` | 100% | Move task to Done, post results |
+
+> ⚠️ **Phase names MUST use `fullName`** (e.g., `CONTEXT`, `TASK BOARD`, `CLOSE`). Short IDs (`CTX`, `PLN`, `BLD`) do NOT work — `useActiveAutopilot.ts` maps against `fullName`.
+
+> ⚠️ **`run_end` phase must be `CLOSE`** (not `COMPLETE` or `FAILED`).
+
+### Handler-Driven Phase Transitions
+
+**Critical:** The HANDLER posts all 8 phase transitions, NOT the dispatched agent. Dispatched Claude sessions are sandboxed and cannot be trusted to make API calls. The handler orchestrates:
+- Phase dot animations (via `work_progress` events)
+- Telegram alerts (via direct HTTP to Telegram Bot API)
+- Build History recording (via `build_summary` insight)
+- Kanban task creation and movement
+
+### Event Types (ai_log)
+
+| event_type | Purpose | Posted By |
+|------------|---------|-----------|
+| `run_start` | Phase 1 — dispatch claimed | Handler |
+| `work_progress` | Every heartbeat + phase transition | Handler |
+| `run_end` | Final event — build complete/failed | Handler |
+
+> ⚠️ **Must post `work_progress` with `phase: "CLOSE"` and `percent_complete: 100` BEFORE `run_end`.** The frontend (`useActiveAutopilot.ts` line 199) only reads `event_type === 'work_progress'` to get `percentComplete`. The `run_end` event has a different `event_type` and gets skipped. Without the CLOSE work_progress, the dashboard stays at 90%.
+
+### Heartbeat System
+
+| Interval | What Fires |
+|----------|-----------|
+| Every 3 min | `work_progress` to `ai_log` (keeps dashboard alive) |
+| Every 6 min | Telegram progress alert (every other heartbeat tick) |
+| 10 min gap | Dashboard shows **STALE** badge |
+| 15 min gap | Dashboard shows **FAILED** badge |
+
+Must cancel `_heartbeat_task` in `finally` block of dispatch handler.
+
+### Telegram Alert Timeline
+
+| Time | Alert |
+|------|-------|
+| 0 min | 🟢 Dispatch Claimed |
+| Every ~6 min | ⚡ Build Progress (phase + %) |
+| Done | ✅ Completed / ❌ Failed (with duration + turns) |
+
+> ⚠️ **Telegram alerts must use direct HTTP** (`httpx.AsyncClient`). Event bus `AgentResponseEvent` cannot drain while `run_command` blocks the asyncio event loop.
+
+### Build History Contract (ai_insights)
+
+```json
+{
+  "request_type": "insight",
+  "action": "create",
+  "insight_type": "summary",
+  "title": "Session Report — Build Client Dashboard",
+  "content": "8/8 phases completed in 14m. 0 heal attempts.",
+  "data": {
+    "event_type": "build_summary",
+    "phases_completed": 8,
+    "total_phases": 8,
+    "duration": "14m",
+    "self_heals": 0,
+    "alignment_score": 92,
+    "run_id": "<uuid>"
+  }
+}
+```
+
+> ⚠️ **`phases_completed` must be `8`** (pipeline stage count), NOT raw `num_turns`. `total_phases: 8`. This drives the dot count in Build History UI.
+
+### Command Center Panels (Data Sources)
+
+| Panel | Data Source | Query |
+|-------|-----------|-------|
+| **Autonomous Assignment** | `ai_log` | `event_type IN ('run_start', 'work_progress', 'run_end')` |
+| **Build History** | `ai_insights` | `event_type = 'build_summary'` |
+| **Run History** | `ai_log` | Filtered by `event_type` |
+
+All three update via Supabase `postgres_changes` real-time subscription.
+
+### Agent Comms (Inter-Agent Messaging)
+
+```
+request_type: "agent_comms"
+actions: send, list, check, reply, mark_read, thread
+message_types: comment, question, status_request, status_response, directive
+```
+
+> ⚠️ **Do NOT use `agent_comms` for dispatching work.** Use `pending_tasks` queue instead. `agent_comms` directives bypass the 8-phase pipeline.
+
+### Dispatch Routing Gotchas
+
+- **`agent_comms` dispatches bypass the pipeline.** The queue poller only watches `pending_tasks`. If Ray sends a directive via `agent_comms`, Sherlock gets the message but the 8-phase handler never activates. Always use `pending_tasks` for build dispatches.
+- **Task title comes from `action` column.** Ray stores the real title in `pending_tasks.action` (mapped from `action_name` in the API). NOT in `payload.task_title` (that's a fallback).
+- **Queue poller polls every 30 seconds**, processes one item at a time, marks `_executing = True` during dispatch to prevent double-pickup.
+- **Every dispatched app must get a README.md.** If env vars or keys are missing, post a ClawBuddy question (priority: high) and move the task to Needs Input.
+
+---
+
 ## Database Tables Reference
 
 ### Core
@@ -1862,6 +2021,7 @@ Self-improving automation health analyzer. Computes 24h/7d success rates, durati
 | `arena_score_categories` | Score categories |
 | `arena_scores` | Individual scores |
 | `musashi_state` | Dokkodo principle tracking |
+| `agent_messages` | Inter-agent communications |
 
 ---
 
