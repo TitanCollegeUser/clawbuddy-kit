@@ -1,4 +1,4 @@
-import { Monitor, Shield, Users, BarChart3, MessageCircle, GitMerge } from 'lucide-react';
+import { Monitor, Shield, Users, BarChart3, MessageCircle, GitMerge, Scale } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import CommandDeck from '@/components/command-center/CommandDeck';
 import AgentProfiles from '@/components/command-center/AgentProfiles';
@@ -6,13 +6,16 @@ import SessionIntel from '@/components/command-center/SessionIntel';
 import Guardrails from '@/components/command-center/Guardrails';
 import { AgentCommsTab } from '@/components/command-center/AgentCommsTab';
 import { OrchestrationTab } from '@/components/command-center/OrchestrationTab';
+import { CouncilTab } from '@/components/command-center/council/CouncilTab';
 import { useCommandCenterAlerts } from '@/hooks/useCommandCenterAlerts';
 import { useUnreadCommsCount } from '@/hooks/useAgentComms';
+import { useActiveCouncilCount } from '@/hooks/useCouncil';
 import { motion } from 'framer-motion';
 
 export const CommandCenterPage = () => {
   useCommandCenterAlerts(); // Side-effect: fires toasts on freshness/alignment transitions
   const { data: unreadCommsCount = 0 } = useUnreadCommsCount();
+  const { data: activeCouncilCount = 0 } = useActiveCouncilCount();
 
   return (
     <div className="command-center-scope max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -53,6 +56,16 @@ export const CommandCenterPage = () => {
               </span>
             )}
           </TabsTrigger>
+          <TabsTrigger value="council" className="gap-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-[0_0_10px_hsl(var(--glow-primary))] transition-all duration-300 relative">
+            <Scale className="w-4 h-4" />
+            <span className="hidden sm:inline">Council</span>
+            <span className="sm:hidden">Council</span>
+            {activeCouncilCount > 0 && (
+              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-cyan-500 text-[10px] font-bold flex items-center justify-center text-white animate-pulse">
+                {activeCouncilCount > 9 ? '9+' : activeCouncilCount}
+              </span>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="orchestration" className="gap-2 data-[state=active]:bg-primary/20 data-[state=active]:text-primary data-[state=active]:shadow-[0_0_10px_hsl(var(--glow-primary))] transition-all duration-300">
             <GitMerge className="w-4 h-4" />
             <span className="hidden sm:inline">Orchestration</span>
@@ -78,6 +91,9 @@ export const CommandCenterPage = () => {
         </TabsContent>
         <TabsContent value="comms">
           <AgentCommsTab />
+        </TabsContent>
+        <TabsContent value="council">
+          <CouncilTab />
         </TabsContent>
         <TabsContent value="orchestration">
           <OrchestrationTab />

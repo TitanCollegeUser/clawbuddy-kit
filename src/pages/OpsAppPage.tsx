@@ -11,6 +11,13 @@ import { ArrowLeft } from 'lucide-react';
 import { icons } from 'lucide-react';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
+import { MeetupLaunchPage } from './MeetupLaunchPage';
+
+// ── Custom app page registry ──
+// When a Lovable-imported app has a dedicated page, route to it instead of generic blocks.
+const CUSTOM_APP_PAGES: Record<string, React.ComponentType> = {
+  'meetup-launch': MeetupLaunchPage,
+};
 
 const resolveIcon = (name: string) => {
   const key = name.charAt(0).toUpperCase() + name.slice(1).replace(/-([a-z])/g, (_, c: string) => c.toUpperCase());
@@ -20,6 +27,11 @@ const resolveIcon = (name: string) => {
 export const OpsAppPage = () => {
   const { appName } = useParams<{ appName: string }>();
   const navigate = useNavigate();
+
+  // Render custom Lovable-imported page if one exists for this app
+  const CustomPage = appName ? CUSTOM_APP_PAGES[appName] : undefined;
+  if (CustomPage) return <CustomPage />;
+
   const { data: app, isLoading: appLoading } = useOpsAppByName(appName || '');
   const { data: pages, isLoading: pagesLoading } = useOpsPages(app?.id || '');
   const [activeTab, setActiveTab] = useState<string | undefined>();

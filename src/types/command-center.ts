@@ -126,6 +126,34 @@ export interface AgentComm {
   replies?: AgentComm[];
 }
 
+// Council types
+export interface CouncilSession {
+  id: string;
+  user_id: string;
+  question: string;
+  status: 'pending' | 'active' | 'completed' | 'archived';
+  created_at: string;
+  started_at: string | null;
+  completed_at: string | null;
+  metadata: Record<string, unknown>;
+  participants?: CouncilParticipant[];
+}
+
+export interface CouncilParticipant {
+  id: string;
+  session_id: string;
+  agent_name: string;
+  agent_emoji: string;
+  turn_order: number;
+  message_limit: number;
+  messages_sent: number;
+  status: 'waiting' | 'active' | 'done';
+}
+
+export interface CouncilMessage extends AgentComm {
+  council_session_id: string;
+}
+
 // Orchestration types
 export interface PendingTask {
   id: string;

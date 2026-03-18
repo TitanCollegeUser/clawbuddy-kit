@@ -17,6 +17,9 @@ export default {
         orbitron: ['Orbitron', 'sans-serif'],
         exo: ['Exo 2', 'sans-serif'],
         jetbrains: ['JetBrains Mono', 'monospace'],
+        heading: ["'Space Grotesk'", 'sans-serif'],
+        body: ["'Inter'", 'sans-serif'],
+        'mono-data': ["'JetBrains Mono'", 'monospace'],
       },
       colors: {
         border: "hsl(var(--border))",

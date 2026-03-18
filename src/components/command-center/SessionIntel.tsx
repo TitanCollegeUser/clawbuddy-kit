@@ -7,6 +7,7 @@ import { useEvolutionLog } from '@/hooks/useEvolutionLog';
 import { useRunLifecycle } from '@/hooks/useRunLifecycle';
 import { useActiveAutopilot } from '@/hooks/useActiveAutopilot';
 import { Badge } from '@/components/ui/badge';
+import { AnimatedPipeline } from './animated/AnimatedPipeline';
 import type { BuildEntry } from '@/types/command-center';
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.08 } } };
@@ -393,6 +394,9 @@ const SessionIntel = () => {
             No autonomous assignment running. Use <span className="font-mono text-foreground">/autopilot</span> in Claude Code to launch one.
           </p>
         )}
+
+        {/* Animated Pipeline Canvas */}
+        <AnimatedPipeline autopilot={autopilot} />
       </motion.div>
 
       {/* Build History */}
