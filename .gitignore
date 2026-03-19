@@ -27,3 +27,6 @@ Thumbs.db
 
 # Netlify
 .netlify/
+
+# Claude Code (may contain local credentials)
+.claude/
