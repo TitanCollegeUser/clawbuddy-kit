@@ -39,6 +39,7 @@ import { AutomationsPage } from "@/pages/AutomationsPage";
 import { AiEmployeesPage } from "@/pages/AiEmployeesPage";
 import { CommandCenterPage } from "@/pages/CommandCenterPage";
 import { ForgePage } from "@/pages/ForgePage";
+import { AIForBusinessPage } from "@/pages/AIForBusinessPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -63,6 +64,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/onboarding" element={<OnboardingPage />} />
+              <Route path="/ai-for-business" element={<AIForBusinessPage />} />
               <Route element={<AppLayout />}>
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/board" element={<BoardPage />} />

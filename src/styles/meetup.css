@@ -1,0 +1,259 @@
+/* ======================================
+   MEETUP LAUNCH — Lovable Component CSS
+   Imported from launch-pad-tracker
+   ====================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+/* Scoped CSS variables for meetup components */
+.meetup-scope {
+  --surface: 225 25% 7% / 0.7;
+  --glass: 225 25% 10% / 0.5;
+  --glass-border: 0 0% 100% / 0.1;
+  --glass-highlight: 0 0% 100% / 0.05;
+  --emerald: 160 84% 45%;
+  --amber: 38 92% 55%;
+  --blue: 217 91% 65%;
+  --purple: 271 91% 70%;
+  --red: 0 84% 60%;
+  --gray: 220 9% 55%;
+  --orange: 25 95% 53%;
+
+  /* Override primary to orange for meetup */
+  --primary: 25 95% 53%;
+  --primary-foreground: 0 0% 100%;
+  --ring: 25 95% 53%;
+
+  --background: 230 25% 3%;
+  --card: 225 25% 7%;
+  --secondary: 225 18% 13%;
+  --muted: 225 18% 13%;
+  --muted-foreground: 220 10% 62%;
+  --border: 0 0% 100% / 0.08;
+}
+
+/* ---- Glass surface cards ---- */
+
+.surface-card {
+  background: hsl(var(--glass, 225 25% 10% / 0.5));
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  border: 1px solid hsl(var(--glass-border, 0 0% 100% / 0.1));
+  border-radius: var(--radius);
+  box-shadow:
+    0 0 0 1px hsl(var(--glass-highlight, 0 0% 100% / 0.05)) inset,
+    0 4px 24px -4px hsl(0 0% 0% / 0.4);
+  transition: box-shadow 0.35s ease, border-color 0.35s ease, transform 0.3s ease;
+}
+
+.surface-card:hover {
+  border-color: hsl(0 0% 100% / 0.15);
+  box-shadow:
+    0 0 0 1px hsl(var(--glass-highlight, 0 0% 100% / 0.05)) inset,
+    0 8px 32px -4px hsl(0 0% 0% / 0.5),
+    0 0 24px -4px hsl(25 95% 53% / 0.1);
+}
+
+.surface-card-static {
+  background: hsl(var(--glass, 225 25% 10% / 0.5));
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  border: 1px solid hsl(var(--glass-border, 0 0% 100% / 0.1));
+  border-radius: var(--radius);
+  box-shadow:
+    0 0 0 1px hsl(var(--glass-highlight, 0 0% 100% / 0.05)) inset,
+    0 4px 24px -4px hsl(0 0% 0% / 0.4);
+}
+
+/* ---- Typography utilities ---- */
+
+.font-mono-data {
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.font-heading {
+  font-family: 'Space Grotesk', sans-serif;
+}
+
+.font-body {
+  font-family: 'Inter', sans-serif;
+}
+
+/* ---- Glow effects ---- */
+
+.glow-orange {
+  box-shadow:
+    0 0 40px hsl(25 95% 53% / 0.15),
+    0 0 100px hsl(25 95% 53% / 0.07),
+    0 0 0 1px hsl(25 95% 53% / 0.2) inset;
+  border-color: hsl(25 95% 53% / 0.25);
+}
+
+.glow-hover {
+  transition: box-shadow 0.4s ease, transform 0.3s ease, border-color 0.35s ease;
+}
+
+.glow-hover:hover {
+  box-shadow:
+    0 0 24px hsl(25 95% 53% / 0.15),
+    0 0 60px hsl(25 95% 53% / 0.07),
+    0 4px 20px -4px hsl(0 0% 0% / 0.4);
+  transform: translateY(-1px);
+  border-color: hsl(25 95% 53% / 0.2);
+}
+
+/* ---- Text gradients ---- */
+
+.text-gradient-orange {
+  background: linear-gradient(135deg, hsl(25 95% 58%), hsl(38 92% 55%));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-cyber {
+  background: linear-gradient(135deg, hsl(217 91% 70%), hsl(271 91% 70%));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ---- Header / Layout ---- */
+
+.glass-header {
+  background: hsl(230 25% 4% / 0.8);
+  backdrop-filter: blur(24px) saturate(1.6);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+}
+
+/* ---- Component-specific ---- */
+
+.metric-glow {
+  transition: box-shadow 0.35s ease, transform 0.3s ease, border-color 0.3s ease;
+}
+
+.metric-glow:hover {
+  transform: translateY(-3px);
+}
+
+.kanban-card {
+  transition: box-shadow 0.3s ease, transform 0.25s ease, border-color 0.3s ease;
+}
+
+.kanban-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px -4px hsl(0 0% 0% / 0.5);
+  border-color: hsl(0 0% 100% / 0.14);
+}
+
+.table-row-hover {
+  transition: background-color 0.2s ease, box-shadow 0.3s ease;
+}
+
+.table-row-hover:hover {
+  background: hsl(0 0% 100% / 0.04);
+  box-shadow: inset 3px 0 0 hsl(25 95% 53% / 0.6);
+}
+
+.timeline-item {
+  transition: background-color 0.2s ease, padding-left 0.3s ease;
+}
+
+.timeline-item:hover {
+  background: hsl(0 0% 100% / 0.03);
+  padding-left: 6px;
+}
+
+/* ---- Tab navigation ---- */
+
+.tab-glow {
+  position: relative;
+}
+
+.tab-glow::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 2px;
+  background: hsl(25 95% 53%);
+  box-shadow: 0 0 14px hsl(25 95% 53% / 0.7), 0 0 40px hsl(25 95% 53% / 0.3);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.tab-glow.tab-active::after {
+  width: 100%;
+}
+
+/* ---- Calendar ---- */
+
+.calendar-day {
+  transition: background-color 0.2s ease, box-shadow 0.3s ease, transform 0.2s ease;
+}
+
+.calendar-day:hover {
+  background: hsl(0 0% 100% / 0.05);
+  box-shadow: 0 0 16px hsl(25 95% 53% / 0.08);
+}
+
+/* ---- Status pulse animation ---- */
+
+.status-pulse {
+  animation: meetup-status-glow 2s ease-in-out infinite;
+}
+
+@keyframes meetup-status-glow {
+  0%, 100% { box-shadow: 0 0 4px currentColor; }
+  50% { box-shadow: 0 0 12px currentColor, 0 0 24px currentColor; }
+}
+
+/* ---- Background effects ---- */
+
+.scan-lines::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 999;
+  opacity: 0.02;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    hsl(0 0% 100% / 0.03) 2px,
+    hsl(0 0% 100% / 0.03) 4px
+  );
+}
+
+.noise-bg::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0.018;
+  z-index: 0;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
+.grid-bg {
+  background-image:
+    linear-gradient(hsl(0 0% 100% / 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(0 0% 100% / 0.02) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ---- Divider ---- */
+
+.divider-glow {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, hsl(25 95% 53% / 0.3), transparent);
+}
