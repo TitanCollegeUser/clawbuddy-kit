@@ -3,7 +3,7 @@ import { Search, Filter, LayoutGrid, List } from "lucide-react";
 import { LibraryItem } from "@/components/salsa/LibraryItem";
 import { BoardCard } from "@/components/salsa/BoardCard";
 import { LIBRARY_ITEMS, BOARDS } from "@/data/salsaData";
-import { useSalsaLibrary } from "@/hooks/useSalsaLibrary";
+import { useSalsaLibrary } from "@/contexts/SalsaLibraryContext";
 
 const TABS = ["All", "Boards", "Videos", "Templates"] as const;
 type Tab = typeof TABS[number];

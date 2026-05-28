@@ -5,10 +5,12 @@ import { SalsaLibraryPage } from "./SalsaLibraryPage";
 import { SalsaAnalyticsPage } from "./SalsaAnalyticsPage";
 import { SalsaSettingsPage } from "./SalsaSettingsPage";
 import { SalsaPlaceholderPage } from "./SalsaPlaceholderPage";
+import { SalsaLibraryProvider } from "@/contexts/SalsaLibraryContext";
 
 export function SalsaApp() {
   return (
-    <Routes>
+    <SalsaLibraryProvider>
+      <Routes>
       <Route element={<SalsaLayout />}>
         <Route index element={<Navigate to="home" replace />} />
         <Route path="home" element={<SalsaHomePage />} />
@@ -56,6 +58,7 @@ export function SalsaApp() {
           }
         />
       </Route>
-    </Routes>
+      </Routes>
+    </SalsaLibraryProvider>
   );
 }

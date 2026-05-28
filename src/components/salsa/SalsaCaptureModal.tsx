@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { X, Camera, Upload, Youtube, HardDrive, Loader2, ArrowLeft, Check } from "lucide-react";
 import { fetchYouTubeMeta, type YouTubeMeta } from "@/lib/youtube";
-import { useSalsaLibrary } from "@/hooks/useSalsaLibrary";
+import { useSalsaLibrary } from "@/contexts/SalsaLibraryContext";
 
 interface Props {
   open: boolean;
