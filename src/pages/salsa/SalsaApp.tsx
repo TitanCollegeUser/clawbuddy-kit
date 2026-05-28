@@ -5,13 +5,15 @@ import { SalsaLibraryPage } from "./SalsaLibraryPage";
 import { SalsaAnalyticsPage } from "./SalsaAnalyticsPage";
 import { SalsaSettingsPage } from "./SalsaSettingsPage";
 import { SalsaPlaceholderPage } from "./SalsaPlaceholderPage";
+import { SalsaVideoPage } from "./SalsaVideoPage";
 import { SalsaLibraryProvider } from "@/contexts/SalsaLibraryContext";
 
 export function SalsaApp() {
   return (
     <SalsaLibraryProvider>
       <Routes>
-      <Route element={<SalsaLayout />}>
+        <Route path="video/:id" element={<SalsaVideoPage />} />
+        <Route element={<SalsaLayout />}>
         <Route index element={<Navigate to="home" replace />} />
         <Route path="home" element={<SalsaHomePage />} />
         <Route path="library" element={<SalsaLibraryPage />} />
