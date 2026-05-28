@@ -1,4 +1,12 @@
-import { Play, Link, MoreVertical } from "lucide-react";
+import { Play, Link, MoreVertical, ExternalLink, Trash2, BookOpen } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useSalsaLibrary } from "@/contexts/SalsaLibraryContext";
 
 export interface LibraryEntry {
   id: string;
@@ -26,6 +34,14 @@ const SOURCE_ICONS: Record<string, string> = {
 
 export function LibraryItem({ item }: Props) {
   const fallbackBg = "linear-gradient(135deg, #1a0a0a 0%, #2d0f0f 60%, #0a0a1a 100%)";
+  const { removeItem, userItems } = useSalsaLibrary();
+  const isUserItem = userItems.some((i) => i.id === item.id);
+
+  function openVideo() {
+    if (item.youtubeId) {
+      window.open(`https://www.youtube.com/watch?v=${item.youtubeId}`, "_blank");
+    }
+  }
 
   return (
     <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 cursor-pointer group transition-colors">
@@ -33,6 +49,7 @@ export function LibraryItem({ item }: Props) {
       <div
         className="relative w-20 h-14 rounded-lg overflow-hidden shrink-0"
         style={{ background: fallbackBg }}
+        onClick={openVideo}
       >
         {item.thumbnail && (
           <img src={item.thumbnail} alt={item.title} className="absolute inset-0 w-full h-full object-cover" />
@@ -47,15 +64,17 @@ export function LibraryItem({ item }: Props) {
             {SOURCE_ICONS[item.sourceType] || <Link className="w-3 h-3" />}
           </div>
         )}
-        <div className="absolute bottom-1 right-1">
-          <span className="text-[10px] bg-black/70 text-white px-1 py-0.5 rounded">
-            {item.duration}
-          </span>
-        </div>
+        {item.duration && (
+          <div className="absolute bottom-1 right-1">
+            <span className="text-[10px] bg-black/70 text-white px-1 py-0.5 rounded">
+              {item.duration}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Info */}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 min-w-0" onClick={openVideo}>
         <div className="flex items-center gap-1.5 mb-0.5">
           <span className="text-[10px] font-bold bg-red-600 text-white px-1.5 py-0.5 rounded leading-none">
             {item.beat}
@@ -75,9 +94,47 @@ export function LibraryItem({ item }: Props) {
         <span className="text-[10px] text-white/30">{item.addedAt}</span>
         <div className="flex items-center gap-1">
           <img src="https://i.pravatar.cc/20?img=3" className="w-4 h-4 rounded-full" alt="" />
-          <button className="text-white/30 hover:text-white transition-colors">
-            <MoreVertical className="w-3.5 h-3.5" />
-          </button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="text-white/30 hover:text-white transition-colors p-0.5 rounded"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreVertical className="w-3.5 h-3.5" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="bg-[#1e1e1e] border-white/10 text-white min-w-[160px]"
+            >
+              {item.youtubeId && (
+                <DropdownMenuItem
+                  className="gap-2 cursor-pointer focus:bg-white/10 focus:text-white"
+                  onClick={() => openVideo()}
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  Open on YouTube
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuItem className="gap-2 cursor-pointer focus:bg-white/10 focus:text-white">
+                <BookOpen className="w-3.5 h-3.5" />
+                Add to Whiteboard
+              </DropdownMenuItem>
+              {isUserItem && (
+                <>
+                  <DropdownMenuSeparator className="bg-white/10" />
+                  <DropdownMenuItem
+                    className="gap-2 cursor-pointer text-red-400 focus:bg-red-500/10 focus:text-red-400"
+                    onClick={() => removeItem(item.id)}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Remove
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </div>
