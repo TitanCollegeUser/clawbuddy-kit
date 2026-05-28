@@ -40,6 +40,7 @@ import { AiEmployeesPage } from "@/pages/AiEmployeesPage";
 import { CommandCenterPage } from "@/pages/CommandCenterPage";
 import { ForgePage } from "@/pages/ForgePage";
 import { AIForBusinessPage } from "@/pages/AIForBusinessPage";
+import { SalsaApp } from "@/pages/salsa/SalsaApp";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -96,6 +97,7 @@ const App = () => (
                 <Route path="/automations" element={<AutomationsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Route>
+              <Route path="/salsa/*" element={<SalsaApp />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AgentNamesProvider>
