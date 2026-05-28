@@ -3,6 +3,7 @@ import { Search, Filter, LayoutGrid, List } from "lucide-react";
 import { LibraryItem } from "@/components/salsa/LibraryItem";
 import { BoardCard } from "@/components/salsa/BoardCard";
 import { LIBRARY_ITEMS, BOARDS } from "@/data/salsaData";
+import { useSalsaLibrary } from "@/hooks/useSalsaLibrary";
 
 const TABS = ["All", "Boards", "Videos", "Templates"] as const;
 type Tab = typeof TABS[number];
@@ -14,8 +15,11 @@ export function SalsaLibraryPage() {
   const [view, setView] = useState<"list" | "grid">("list");
   const [sort, setSort] = useState("Recent");
   const [search, setSearch] = useState("");
+  const { userItems } = useSalsaLibrary();
 
-  const filteredItems = LIBRARY_ITEMS.filter(
+  const allItems = [...userItems, ...LIBRARY_ITEMS];
+
+  const filteredItems = allItems.filter(
     (item) =>
       item.title.toLowerCase().includes(search.toLowerCase()) ||
       item.category.toLowerCase().includes(search.toLowerCase())

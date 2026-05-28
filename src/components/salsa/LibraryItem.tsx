@@ -11,6 +11,7 @@ export interface LibraryEntry {
   beat: string;
   thumbnail?: string;
   sourceType?: "upload" | "youtube" | "drive";
+  youtubeId?: string;
 }
 
 interface Props {
@@ -24,15 +25,18 @@ const SOURCE_ICONS: Record<string, string> = {
 };
 
 export function LibraryItem({ item }: Props) {
-  const bg = "linear-gradient(135deg, #1a0a0a 0%, #2d0f0f 60%, #0a0a1a 100%)";
+  const fallbackBg = "linear-gradient(135deg, #1a0a0a 0%, #2d0f0f 60%, #0a0a1a 100%)";
 
   return (
     <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 cursor-pointer group transition-colors">
       {/* Thumbnail */}
       <div
         className="relative w-20 h-14 rounded-lg overflow-hidden shrink-0"
-        style={{ background: bg, backgroundSize: "cover", backgroundPosition: "center" }}
+        style={{ background: fallbackBg }}
       >
+        {item.thumbnail && (
+          <img src={item.thumbnail} alt={item.title} className="absolute inset-0 w-full h-full object-cover" />
+        )}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
           <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center">
             <Play className="w-3.5 h-3.5 text-white fill-white ml-0.5" />
