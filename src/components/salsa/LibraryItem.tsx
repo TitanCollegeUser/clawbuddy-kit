@@ -39,7 +39,7 @@ export function LibraryItem({ item }: Props) {
   const navigate = useNavigate();
   const isUserItem = userItems.some((i) => i.id === item.id);
 
-  function openVideo() {
+  function openWhiteboard() {
     navigate(`/salsa/video/${item.id}`, { state: { item } });
   }
 
@@ -48,7 +48,10 @@ export function LibraryItem({ item }: Props) {
   }
 
   return (
-    <div className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 cursor-pointer group transition-colors" onClick={openVideo}>
+    <div
+      className="flex items-center gap-3 p-2 rounded-xl hover:bg-white/5 cursor-pointer group transition-colors"
+      onClick={openWhiteboard}
+    >
       {/* Thumbnail */}
       <div
         className="relative w-20 h-14 rounded-lg overflow-hidden shrink-0"
@@ -92,18 +95,17 @@ export function LibraryItem({ item }: Props) {
         </p>
       </div>
 
-      {/* Meta */}
-      <div className="flex flex-col items-end gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+      {/* Meta — stopPropagation so dropdown doesn't trigger row click */}
+      <div
+        className="flex flex-col items-end gap-1 shrink-0"
+        onClick={(e) => e.stopPropagation()}
+      >
         <span className="text-[10px] text-white/30">{item.addedAt}</span>
         <div className="flex items-center gap-1">
           <img src="https://i.pravatar.cc/20?img=3" className="w-4 h-4 rounded-full" alt="" />
-
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button
-                className="text-white/30 hover:text-white transition-colors p-0.5 rounded"
-                onClick={(e) => e.stopPropagation()}
-              >
+              <button className="text-white/30 hover:text-white transition-colors p-0.5 rounded">
                 <MoreVertical className="w-3.5 h-3.5" />
               </button>
             </DropdownMenuTrigger>
@@ -111,27 +113,22 @@ export function LibraryItem({ item }: Props) {
               align="end"
               className="bg-[#1e1e1e] border-white/10 text-white min-w-[160px]"
             >
+              <DropdownMenuItem
+                className="gap-2 cursor-pointer focus:bg-white/10 focus:text-white"
+                onClick={openWhiteboard}
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                Open with Whiteboard
+              </DropdownMenuItem>
               {item.youtubeId && (
                 <DropdownMenuItem
                   className="gap-2 cursor-pointer focus:bg-white/10 focus:text-white"
-                  onClick={() => openYouTube()}
+                  onClick={openYouTube}
                 >
                   <ExternalLink className="w-3.5 h-3.5" />
                   Open on YouTube
                 </DropdownMenuItem>
               )}
-              <DropdownMenuItem
-                className="gap-2 cursor-pointer focus:bg-white/10 focus:text-white"
-                onClick={() => openVideo()}
-              >
-                <BookOpen className="w-3.5 h-3.5" />
-                Open with Whiteboard
-                </DropdownMenuItem>
-              )}
-              <DropdownMenuItem className="gap-2 cursor-pointer focus:bg-white/10 focus:text-white">
-                <BookOpen className="w-3.5 h-3.5" />
-                Add to Whiteboard
-              </DropdownMenuItem>
               {isUserItem && (
                 <>
                   <DropdownMenuSeparator className="bg-white/10" />
