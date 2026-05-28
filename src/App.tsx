@@ -58,11 +58,14 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <AuthProvider>
-          <AiSettingsProvider>
-          <AgentNamesProvider>
-            <Routes>
-              <Route path="/" element={<Index />} />
+        <Routes>
+          <Route path="/salsa/*" element={<SalsaApp />} />
+          <Route path="/*" element={
+            <AuthProvider>
+              <AiSettingsProvider>
+              <AgentNamesProvider>
+                <Routes>
+                  <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/onboarding" element={<OnboardingPage />} />
               <Route path="/ai-for-business" element={<AIForBusinessPage />} />
@@ -97,12 +100,13 @@ const App = () => (
                 <Route path="/automations" element={<AutomationsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
               </Route>
-              <Route path="/salsa/*" element={<SalsaApp />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AgentNamesProvider>
           </AiSettingsProvider>
         </AuthProvider>
+          } />
+        </Routes>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
